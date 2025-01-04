@@ -16,6 +16,10 @@ interface Node {
   oscillationSpeed: number;
   baseRadius: number;
   initialScale: number; // For fade-in animation
+  movementOffset: number; // Add this new property
+  glowWaveOffset: number; // Add this new property
+  originalX: number;
+  originalY: number;
 }
 
 interface Connection {
@@ -51,9 +55,9 @@ const NODE_COUNT = 45;
 const CONNECTION_DISTANCE = 300;
 const MAX_CONNECTIONS_PER_NODE = 3;
 const BASE_SPEED = 0.15;
-const GLOW_SPEED = 0.006;
-const MAX_GLOW = 1.8;
-const MIN_GLOW = 0.3;
+const GLOW_SPEED = 0.002; // Even slower for smoother transitions
+const MAX_GLOW = 2.0; // Slightly higher max glow
+const MIN_GLOW = 0.4; // Slightly higher min glow
 const PULSE_SPEED = 0.01; // Slightly slower for smoother movement
 const MIN_CONNECTION_LIFETIME = 800; // Longer lifetime for more stable connections
 const CONNECTION_UPDATE_INTERVAL = 90;
@@ -62,19 +66,28 @@ const MOUSE_REPEL_STRENGTH = 1.8; // Slightly reduced
 const MOUSE_ATTRACT_STRENGTH = 0.4; // Slightly stronger attract
 const MOUSE_FORCE_TRANSITION = 0.7; // Point where repel changes to attract
 const MOUSE_GLOW_INTENSITY = 2.0; // Reduced for more subtle glow
-const VELOCITY_DAMPENING = 0.96; // Smoother deceleration
-const FORCE_FIELD_STRENGTH = 0.6; // Reduced for smoother movement
-const MOUSE_VELOCITY_MEMORY = 0.92; // For smooth mouse movement
-const Z_FORCE_MULTIPLIER = 0.3; // Reduced for more subtle 3D effect
+const VELOCITY_DAMPENING = 0.95; // Less dampening for more movement
+const FORCE_FIELD_STRENGTH = 0.7; // Reduced force
+const MOUSE_VELOCITY_MEMORY = 0.95; // Increased for smoother mouse tracking
+const Z_FORCE_MULTIPLIER = 0.15; // More subtle depth movement
 const Z_RANGE = 300; // Maximum Z-depth for 3D effect
 const INITIAL_ANIMATION_DURATION = 3000; // Duration of initial animation in ms
-const WAVE_FREQUENCY = 0.001; // Slightly faster wave animation
+const WAVE_FREQUENCY = 0.0003; // Slower waves
 const PULSE_SIZE_MIN = 1; // New constant
 const PULSE_SIZE_MAX = 5; // New constant
 const MAX_PULSE_COUNT = 1; // Maximum number of pulses per connection
 const PULSE_SPAWN_CHANCE = 0.01; // Lower chance to make pulses more rare
 const PULSE_FADE_SPEED = 0.005; // New constant for controlling fade out speed
-const OSCILLATION_SPEED_RANGE = [0.001, 0.003]; // Slightly slower for smoother movement
+const OSCILLATION_SPEED_RANGE = [0.001, 0.003]; // Slightly faster oscillation
+const NODE_MOVEMENT_FREQUENCY = 0.0005; // Faster base movement
+const GLOW_WAVE_FREQUENCY = 0.0008; // Faster glow pulsing
+const GLOW_SECONDARY_FREQUENCY = 0.001;
+const GLOW_TERTIARY_FREQUENCY = 0.0012;
+const BASE_MOVEMENT_RANGE = 0.9; // More movement range
+const MOVEMENT_VARIATION = 0.6; // More variation
+const RETURN_FORCE = 0.0002; // Less return force for more freedom
+const MAX_OFFSET = 45; // Larger movement radius
+const GLOW_VARIATION = 0.35; // More glow variation
 
 export const NeuralBackground = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -92,9 +105,13 @@ export const NeuralBackground = () => {
   const initNodes = (width: number, height: number) => {
     return Array.from({ length: NODE_COUNT }, () => {
       const baseRadius = Math.random() * 2 + 2;
+      const x = Math.random() * width;
+      const y = Math.random() * height;
       return {
-        x: Math.random() * width,
-        y: Math.random() * height,
+        x,
+        y,
+        originalX: x,
+        originalY: y,
         z: Math.random() * Z_RANGE - Z_RANGE / 2,
         vx: (Math.random() - 0.5) * BASE_SPEED,
         vy: (Math.random() - 0.5) * BASE_SPEED,
@@ -111,6 +128,8 @@ export const NeuralBackground = () => {
           Math.random() *
             (OSCILLATION_SPEED_RANGE[1] - OSCILLATION_SPEED_RANGE[0]),
         initialScale: 0, // Start at 0 for fade-in animation
+        movementOffset: Math.random() * Math.PI * 2,
+        glowWaveOffset: Math.random() * Math.PI * 2,
       };
     });
   };
@@ -489,12 +508,48 @@ export const NeuralBackground = () => {
     deltaTime: number,
     width: number,
     height: number,
-    progress: number
+    progress: number,
+    timestamp: number
   ) => {
     const nodes = nodesRef.current;
     const padding = 50;
 
     nodes.forEach((node) => {
+      const timeOffset = timestamp * NODE_MOVEMENT_FREQUENCY + node.movementOffset;
+      
+      // More complex, organic movement pattern
+      const dx = (
+        Math.sin(timeOffset) * Math.cos(timeOffset * 0.7) * BASE_MOVEMENT_RANGE +
+        Math.sin(timeOffset * 0.4) * MOVEMENT_VARIATION +
+        Math.cos(timeOffset * 0.3) * MOVEMENT_VARIATION * 0.5 +
+        Math.sin(timeOffset * 1.5) * MOVEMENT_VARIATION * 0.4 + // Faster component
+        Math.cos(timeOffset * 0.2) * MOVEMENT_VARIATION * 0.3   // Slower component
+      );
+      const dy = (
+        Math.cos(timeOffset * 0.8) * Math.sin(timeOffset * 0.5) * BASE_MOVEMENT_RANGE +
+        Math.cos(timeOffset * 0.6) * MOVEMENT_VARIATION +
+        Math.sin(timeOffset * 0.4) * MOVEMENT_VARIATION * 0.5 +
+        Math.cos(timeOffset * 1.4) * MOVEMENT_VARIATION * 0.4 + // Faster component
+        Math.sin(timeOffset * 0.3) * MOVEMENT_VARIATION * 0.3   // Slower component
+      );
+      const dz = (
+        Math.sin(timeOffset * 0.3) * 0.4 +
+        Math.cos(timeOffset * 0.5) * 0.3 +
+        Math.sin(timeOffset * 0.8) * 0.2 +
+        Math.cos(timeOffset * 1.2) * 0.1  // Added faster Z movement
+      );
+
+      // Calculate return force to original position with easing
+      const distanceX = node.originalX - node.x;
+      const distanceY = node.originalY - node.y;
+      const returnForceX = distanceX * RETURN_FORCE * (1 + Math.abs(distanceX) / MAX_OFFSET);
+      const returnForceY = distanceY * RETURN_FORCE * (1 + Math.abs(distanceY) / MAX_OFFSET);
+
+      // Apply forces with reduced strength
+      node.vx += (dx * deltaTime * 0.005) + returnForceX;
+      node.vy += (dy * deltaTime * 0.005) + returnForceY;
+      node.vz += dz * deltaTime * 0.005;
+
       // Update initial scale for fade-in animation
       if (progress < 1) {
         node.initialScale = Math.min(1, node.initialScale + deltaTime * 0.01);
@@ -502,34 +557,49 @@ export const NeuralBackground = () => {
 
       applyMouseInfluence(node, deltaTime);
 
+      // Apply movement with smooth transitions
       node.x += node.vx * deltaTime;
       node.y += node.vy * deltaTime;
       node.z += node.vz * deltaTime;
 
-      // Smoother deceleration
+      // Enhanced glow animation with more variation
+      const glowWave = 
+        Math.sin(timestamp * GLOW_WAVE_FREQUENCY + node.glowWaveOffset) * 0.7 + 
+        Math.sin(timestamp * GLOW_SECONDARY_FREQUENCY + node.glowWaveOffset * 1.5) * 0.4 +
+        Math.sin(timestamp * GLOW_TERTIARY_FREQUENCY + node.glowWaveOffset * 0.7) * 0.3 +
+        Math.sin(timestamp * 0.003 + node.glowWaveOffset * 0.3) * 0.2;
+
+      // More dynamic position variation
+      const positionVariation = 
+        Math.sin(node.x * 0.01 + timestamp * 0.0003) * 
+        Math.cos(node.y * 0.01 + timestamp * 0.0004) * 
+        GLOW_VARIATION * 
+        (1 + Math.sin(timestamp * 0.0001) * 0.3); // Added slow modulation
+
+      const baseGlow = (MAX_GLOW + MIN_GLOW) / 2;
+      const glowRange = (MAX_GLOW - MIN_GLOW) / 2;
+      node.glowIntensity = 
+        baseGlow + 
+        (glowWave * glowRange * 0.7) + 
+        positionVariation;
+
+      // Add subtle random variation
+      node.glowIntensity += (Math.random() - 0.5) * 0.02;
+
+      // Ensure glow stays within bounds with smooth clamping
+      node.glowIntensity = MIN_GLOW + 
+        (MAX_GLOW - MIN_GLOW) * 
+        (1 - Math.cos(Math.max(0, Math.min(1, (node.glowIntensity - MIN_GLOW) / (MAX_GLOW - MIN_GLOW))) * Math.PI)) / 2;
+
+      // Stronger velocity dampening
       node.vx *= Math.pow(VELOCITY_DAMPENING, deltaTime);
       node.vy *= Math.pow(VELOCITY_DAMPENING, deltaTime);
       node.vz *= Math.pow(VELOCITY_DAMPENING, deltaTime);
 
-      // Enhanced boundary behavior with Z-axis
-      const boundaryForce = 0.002 * deltaTime;
-      if (node.x < padding) node.vx += boundaryForce;
-      if (node.x > width - padding) node.vx -= boundaryForce;
-      if (node.y < padding) node.vy += boundaryForce;
-      if (node.y > height - padding) node.vy -= boundaryForce;
-      if (Math.abs(node.z) > Z_RANGE / 2)
-        node.vz -= Math.sign(node.z) * boundaryForce;
-
-      // Keep within bounds
-      node.x = Math.max(padding, Math.min(width - padding, node.x));
-      node.y = Math.max(padding, Math.min(height - padding, node.y));
-      node.z = Math.max(-Z_RANGE / 2, Math.min(Z_RANGE / 2, node.z));
-
-      // Smooth glow animation
-      node.glowIntensity += GLOW_SPEED * node.glowDirection * deltaTime;
-      if (node.glowIntensity >= MAX_GLOW || node.glowIntensity <= MIN_GLOW) {
-        node.glowDirection *= -1;
-      }
+      // Keep within tighter bounds relative to original position
+      node.x = Math.max(node.originalX - MAX_OFFSET, Math.min(node.originalX + MAX_OFFSET, node.x));
+      node.y = Math.max(node.originalY - MAX_OFFSET, Math.min(node.originalY + MAX_OFFSET, node.y));
+      node.z = Math.max(-Z_RANGE / 6, Math.min(Z_RANGE / 6, node.z));
     });
   };
 
@@ -554,7 +624,7 @@ export const NeuralBackground = () => {
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    updateNodes(deltaTime, canvas.width, canvas.height, progress);
+    updateNodes(deltaTime, canvas.width, canvas.height, progress, timestamp);
 
     if (frameCountRef.current % CONNECTION_UPDATE_INTERVAL === 0) {
       updateConnections(progress);
