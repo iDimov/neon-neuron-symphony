@@ -87,9 +87,11 @@ export const NeuralBackground = () => {
             ctx.moveTo(nodeA.x, nodeA.y);
             ctx.lineTo(nodeB.x, nodeB.y);
             
-            // Create gradient with properly formatted hex opacity
+            // Ensure opacity is between 0 and 255 before converting to hex
+            const opacityValue = Math.max(0, Math.min(255, Math.floor(opacity * 255)));
+            const opacityHex = opacityValue.toString(16).padStart(2, '0');
+            
             const gradient = ctx.createLinearGradient(nodeA.x, nodeA.y, nodeB.x, nodeB.y);
-            const opacityHex = Math.floor(opacity * 255).toString(16).padStart(2, '0');
             gradient.addColorStop(0, `${nodeA.color}${opacityHex}`);
             gradient.addColorStop(1, `${nodeB.color}${opacityHex}`);
             
