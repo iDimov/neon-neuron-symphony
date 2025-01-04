@@ -35,6 +35,7 @@ interface Connection {
     position: number;
     opacity: number;
   }[];
+  drawProgress: number; // Add this for line drawing animation
 }
 
 interface MousePosition {
@@ -51,16 +52,17 @@ const COLORS = [
   "#2DD4BF", // Teal
 ];
 
-const NODE_COUNT = 45;
-const CONNECTION_DISTANCE = 300;
+const NODE_COUNT = 55;
+const CONNECTION_DISTANCE = 350;
 const MAX_CONNECTIONS_PER_NODE = 1;
 const BASE_SPEED = 0.15;
 const GLOW_SPEED = 0.002; // Even slower for smoother transitions
 const MAX_GLOW = 2.0; // Slightly higher max glow
 const MIN_GLOW = 0.4; // Slightly higher min glow
-const PULSE_SPEED = 0.01; // Slightly slower for smoother movement
-const MIN_CONNECTION_LIFETIME = 800; // Longer lifetime for more stable connections
-const CONNECTION_UPDATE_INTERVAL = 90;
+const PULSE_SPEED = 0.02; // Even faster movement
+const MIN_CONNECTION_LIFETIME = 8000; // Even longer lifetime for more stability
+const CONNECTION_UPDATE_INTERVAL = 30; // More frequent updates
+const LINE_DRAW_SPEED = 0.08; // Faster line drawing
 const MOUSE_INFLUENCE_RADIUS = 350; // Slightly reduced
 const MOUSE_REPEL_STRENGTH = 1.8; // Slightly reduced
 const MOUSE_ATTRACT_STRENGTH = 0.4; // Slightly stronger attract
@@ -71,13 +73,13 @@ const FORCE_FIELD_STRENGTH = 0.7; // Reduced force
 const MOUSE_VELOCITY_MEMORY = 0.95; // Increased for smoother mouse tracking
 const Z_FORCE_MULTIPLIER = 0.15; // More subtle depth movement
 const Z_RANGE = 300; // Maximum Z-depth for 3D effect
-const INITIAL_ANIMATION_DURATION = 3000; // Duration of initial animation in ms
+const INITIAL_ANIMATION_DURATION = 1500; // Faster initial animation
 const WAVE_FREQUENCY = 0.0003; // Slower waves
-const PULSE_SIZE_MIN = 1; // New constant
-const PULSE_SIZE_MAX = 5; // New constant
-const MAX_PULSE_COUNT = 1; // Maximum number of pulses per connection
-const PULSE_SPAWN_CHANCE = 0.01; // Lower chance to make pulses more rare
-const PULSE_FADE_SPEED = 0.005; // New constant for controlling fade out speed
+const PULSE_SIZE_MIN = 2;
+const PULSE_SIZE_MAX = 4; // Slightly smaller
+const MAX_PULSE_COUNT = 1;
+const PULSE_SPAWN_CHANCE = 0.005; // Much lower spawn chance
+const PULSE_FADE_SPEED = 0.01; // Faster fade out
 const OSCILLATION_SPEED_RANGE = [0.001, 0.003]; // Slightly faster oscillation
 const NODE_MOVEMENT_FREQUENCY = 0.0005; // Faster base movement
 const GLOW_WAVE_FREQUENCY = 0.0008; // Faster glow pulsing
@@ -329,57 +331,60 @@ export const NeuralBackground = () => {
     const nodes = nodesRef.current;
     const currentConnections = connectionsRef.current;
 
+    // Update existing connections
     currentConnections.forEach((conn) => {
       conn.lifetime--;
+      conn.drawProgress = Math.min(1, conn.drawProgress + LINE_DRAW_SPEED);
     });
 
+    // Filter out dead connections
     connectionsRef.current = currentConnections.filter(
       (conn) => conn.lifetime > 0
     );
 
+    // Reset connection counts
     nodes.forEach((node) => (node.connections = 0));
     connectionsRef.current.forEach((conn) => {
       conn.nodeA.connections++;
       conn.nodeB.connections++;
     });
 
-    // Only create new connections after initial animation
-    if (progress >= 1) {
-      nodes.forEach((nodeA, i) => {
-        if (nodeA.connections >= MAX_CONNECTIONS_PER_NODE) return;
+    // Create new connections
+    nodes.forEach((nodeA, i) => {
+      if (nodeA.connections >= MAX_CONNECTIONS_PER_NODE) return;
 
-        nodes.slice(i + 1).forEach((nodeB) => {
-          if (nodeB.connections >= MAX_CONNECTIONS_PER_NODE) return;
+      nodes.slice(i + 1).forEach((nodeB) => {
+        if (nodeB.connections >= MAX_CONNECTIONS_PER_NODE) return;
 
-          const dx = nodeA.x - nodeB.x;
-          const dy = nodeA.y - nodeB.y;
-          const dz = nodeA.z - nodeB.z;
-          const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        const dx = nodeA.x - nodeB.x;
+        const dy = nodeA.y - nodeB.y;
+        const dz = nodeA.z - nodeB.z;
+        const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
-          if (distance < CONNECTION_DISTANCE) {
-            const existingConnection = connectionsRef.current.find(
-              (conn) =>
-                (conn.nodeA === nodeA && conn.nodeB === nodeB) ||
-                (conn.nodeA === nodeB && conn.nodeB === nodeA)
-            );
+        if (distance < CONNECTION_DISTANCE) {
+          const existingConnection = connectionsRef.current.find(
+            (conn) =>
+              (conn.nodeA === nodeA && conn.nodeB === nodeB) ||
+              (conn.nodeA === nodeB && conn.nodeB === nodeA)
+          );
 
-            if (!existingConnection) {
-              connectionsRef.current.push({
-                nodeA,
-                nodeB,
-                pulses: [],
-                pulsePosition: Math.random(),
-                pulseDirection: 1,
-                strength: 1 - distance / CONNECTION_DISTANCE,
-                lifetime: MIN_CONNECTION_LIFETIME + Math.random() * 100,
-                width: Math.random() * 1 + 1,
-                initialOpacity: 0,
-              });
-            }
+          if (!existingConnection) {
+            connectionsRef.current.push({
+              nodeA,
+              nodeB,
+              pulses: [],
+              pulsePosition: Math.random(),
+              pulseDirection: 1,
+              strength: 1 - distance / CONNECTION_DISTANCE,
+              lifetime: MIN_CONNECTION_LIFETIME + Math.random() * 3000,
+              width: Math.random() * 2 + 1.5,
+              initialOpacity: 0.6, // Higher initial opacity
+              drawProgress: 0.3, // Start with more progress
+            });
           }
-        });
+        }
       });
-    }
+    });
   };
 
   const drawConnections = (
@@ -406,106 +411,101 @@ export const NeuralBackground = () => {
       const avgZ = (nodeA.z + nodeB.z) / 2;
       const depthAlpha = Math.max(0, 1 - Math.abs(avgZ) / Z_RANGE);
 
-      connection.initialOpacity = Math.min(
-        1,
-        connection.initialOpacity + deltaTime * 0.01
-      );
-      const opacity = progress * connection.initialOpacity * depthAlpha;
-
+      connection.initialOpacity = Math.min(1, connection.initialOpacity + deltaTime * 0.01);
+      const opacity = Math.min(1, progress * connection.initialOpacity * depthAlpha * 4); // More visibility
+      const alpha = Math.floor(
+        Math.max(0, Math.min(255, strength * 0.9 * opacity * 255 * connection.drawProgress))
+      ).toString(16).padStart(2, "0");
+      
       // Calculate curve control point with safety checks
       const midX = (nodeA.x + nodeB.x) / 2;
       const midY = (nodeA.y + nodeB.y) / 2;
       const waveAmplitude = Math.min(15, distance * 0.1) * depthAlpha;
       const waveOffset = Math.sin(timestamp * WAVE_FREQUENCY + nodeA.oscillationOffset) * waveAmplitude;
       
-      // Ensure perpendicular vectors are normalized
+      // Calculate control points for the curve
       const perpX = -dy / distance;
       const perpY = dx / distance;
-      
       const controlX = midX + perpX * waveOffset;
       const controlY = midY + perpY * waveOffset;
 
-      // Draw connection line
-      ctx.beginPath();
-      ctx.moveTo(nodeA.x, nodeA.y);
-      ctx.quadraticCurveTo(controlX, controlY, nodeB.x, nodeB.y);
-
-      const gradient = ctx.createLinearGradient(
-        nodeA.x,
-        nodeA.y,
-        nodeB.x,
-        nodeB.y
-      );
-      const alpha = Math.floor(Math.max(0, Math.min(255, strength * 0.4 * opacity * 255)))
-        .toString(16)
-        .padStart(2, "0");
+      // Draw the connection line with animation
+      ctx.save();
+      ctx.lineCap = 'round';
+      ctx.lineWidth = Math.max(0.5, width * depthAlpha); // Increased minimum line width
+      
+      // Create gradient with higher opacity
+      const gradient = ctx.createLinearGradient(nodeA.x, nodeA.y, nodeB.x, nodeB.y);
       gradient.addColorStop(0, `${nodeA.color}${alpha}`);
       gradient.addColorStop(0.5, `${nodeA.color}${alpha}`);
       gradient.addColorStop(1, `${nodeB.color}${alpha}`);
-
+      
       ctx.strokeStyle = gradient;
-      ctx.lineWidth = Math.max(0.1, width * depthAlpha);
+      
+      // Draw the path
+      ctx.beginPath();
+      ctx.moveTo(nodeA.x, nodeA.y);
+      ctx.quadraticCurveTo(controlX, controlY, nodeB.x, nodeB.y);
       ctx.stroke();
+      ctx.restore();
 
-      // Pulse management with safety checks
-      if (connection.pulses.length < MAX_PULSE_COUNT && Math.random() < PULSE_SPAWN_CHANCE) {
-        connection.pulses.push({
-          position: 0,
-          opacity: 1
-        });
-      }
+      // Only draw pulses if the line is mostly drawn
+      if (connection.drawProgress > 0.3) {
+        // More random and rare pulse creation
+        if (connection.pulses.length === 0 && 
+            Math.random() < PULSE_SPAWN_CHANCE) { // Removed deltaTime multiplication
+          connection.pulses.push({
+            position: 0,
+            opacity: 1
+          });
+        }
 
-      // Update and draw each pulse with safety checks
-      connection.pulses = connection.pulses.filter(pulse => {
-        const t = Math.max(0, Math.min(1, pulse.position));
-        const pulseX = Math.pow(1 - t, 2) * nodeA.x + 
-                       2 * (1 - t) * t * controlX + 
-                       Math.pow(t, 2) * nodeB.x;
-        const pulseY = Math.pow(1 - t, 2) * nodeA.y + 
-                       2 * (1 - t) * t * controlY + 
-                       Math.pow(t, 2) * nodeB.y;
+        // Update and draw each pulse
+        connection.pulses = connection.pulses.filter(pulse => {
+          const t = Math.max(0, Math.min(1, pulse.position));
+          
+          // Calculate pulse position along the curve
+          const pulseX = Math.pow(1 - t, 2) * nodeA.x + 
+                         2 * (1 - t) * t * controlX + 
+                         Math.pow(t, 2) * nodeB.x;
+          const pulseY = Math.pow(1 - t, 2) * nodeA.y + 
+                         2 * (1 - t) * t * controlY + 
+                         Math.pow(t, 2) * nodeB.y;
 
-        // Ensure pulse size is finite and positive
-        const pulseSize = Math.max(0.1, Math.min(10, (PULSE_SIZE_MIN + 
-          Math.sin(pulse.position * Math.PI) * (PULSE_SIZE_MAX - PULSE_SIZE_MIN)) * 
-          depthAlpha));
+          // Calculate pulse size with smooth animation
+          const pulseSize = Math.max(PULSE_SIZE_MIN, 
+            (PULSE_SIZE_MIN + Math.sin(pulse.position * Math.PI) * 
+            (PULSE_SIZE_MAX - PULSE_SIZE_MIN)) * depthAlpha);
 
-        try {
+          // Draw the pulse with enhanced visibility
           const pulseGradient = ctx.createRadialGradient(
-            pulseX,
-            pulseY,
-            0,
-            pulseX,
-            pulseY,
-            pulseSize
+            pulseX, pulseY, 0,
+            pulseX, pulseY, pulseSize
           );
           
-          const pulseOpacity = Math.max(0, Math.min(1, pulse.opacity * Math.sin(pulse.position * Math.PI) * opacity));
+          const pulseOpacity = Math.max(0, Math.min(1, 
+            pulse.opacity * Math.sin(pulse.position * Math.PI) * opacity * 2)); // More visibility
+          
           pulseGradient.addColorStop(0, `${nodeA.color}${Math.floor(255 * pulseOpacity)
             .toString(16)
             .padStart(2, "0")}`);
-          pulseGradient.addColorStop(0.3, `${nodeA.color}${Math.floor(180 * pulseOpacity)
-            .toString(16)
-            .padStart(2, "0")}`);
-          pulseGradient.addColorStop(0.6, `${nodeA.color}${Math.floor(100 * pulseOpacity)
+          pulseGradient.addColorStop(0.5, `${nodeA.color}${Math.floor(150 * pulseOpacity)
             .toString(16)
             .padStart(2, "0")}`);
           pulseGradient.addColorStop(1, "transparent");
 
           ctx.beginPath();
-          ctx.arc(pulseX, pulseY, pulseSize, 0, Math.PI * 2);
           ctx.fillStyle = pulseGradient;
+          ctx.arc(pulseX, pulseY, pulseSize, 0, Math.PI * 2);
           ctx.fill();
-        } catch (error) {
-          console.debug('Skipping invalid pulse render');
-        }
 
-        // Update pulse position with safety checks
-        pulse.position = Math.min(1, pulse.position + PULSE_SPEED * deltaTime);
-        pulse.opacity = Math.max(0, pulse.opacity - PULSE_FADE_SPEED * deltaTime);
+          // Update pulse position and opacity
+          pulse.position += PULSE_SPEED * deltaTime;
+          pulse.opacity = Math.max(0, pulse.opacity - PULSE_FADE_SPEED * deltaTime);
 
-        return pulse.position < 1 && pulse.opacity > 0;
-      });
+          return pulse.position < 1 && pulse.opacity > 0;
+        });
+      }
     });
   };
 
@@ -669,42 +669,17 @@ export const NeuralBackground = () => {
       canvas.height = window.innerHeight;
       nodesRef.current = initNodes(canvas.width, canvas.height);
       connectionsRef.current = [];
-      startTimeRef.current = 0; // Reset animation on resize
-    };
-
-    // Convert the React event handlers to native DOM event handlers
-    const handleMouseMoveNative = (event: MouseEvent) => {
-      const rect = canvas.getBoundingClientRect();
-      const scaleX = canvas.width / rect.width;
-      const scaleY = canvas.height / rect.height;
-      
-      mousePositionRef.current = {
-        x: (event.clientX - rect.left) * scaleX,
-        y: (event.clientY - rect.top) * scaleY,
-        active: true,
-      };
-    };
-
-    const handleMouseLeaveNative = () => {
-      mousePositionRef.current.active = false;
+      startTimeRef.current = 0;
     };
 
     handleResize();
-    
-    // Add native event listeners directly to the canvas
-    canvas.addEventListener("mousemove", handleMouseMoveNative);
-    canvas.addEventListener("mouseleave", handleMouseLeaveNative);
     window.addEventListener("resize", handleResize);
-    
     animationFrameRef.current = requestAnimationFrame(animate);
 
     return () => {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
-      // Clean up event listeners
-      canvas.removeEventListener("mousemove", handleMouseMoveNative);
-      canvas.removeEventListener("mouseleave", handleMouseLeaveNative);
       window.removeEventListener("resize", handleResize);
     };
   }, []);
