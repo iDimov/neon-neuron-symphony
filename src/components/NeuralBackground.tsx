@@ -7,12 +7,17 @@ interface Node {
   vy: number;
   radius: number;
   color: string;
+  glowIntensity: number;
+  glowDirection: 1 | -1;
 }
 
 const COLORS = ['#0EA5E9', '#8B5CF6', '#D946EF'];
 const NODE_COUNT = 30;
 const CONNECTION_DISTANCE = 150;
 const SPEED = 0.5;
+const GLOW_SPEED = 0.02;
+const MAX_GLOW = 1.5;
+const MIN_GLOW = 0.5;
 
 export const NeuralBackground = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -39,15 +44,32 @@ export const NeuralBackground = () => {
         vy: (Math.random() - 0.5) * SPEED,
         radius: Math.random() * 2 + 2,
         color: COLORS[Math.floor(Math.random() * COLORS.length)],
+        glowIntensity: Math.random() * (MAX_GLOW - MIN_GLOW) + MIN_GLOW,
+        glowDirection: Math.random() > 0.5 ? 1 : -1,
       }));
     };
 
     const drawNode = (node: Node) => {
       if (!ctx) return;
-      ctx.beginPath();
-      ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
+      
+      // Draw glow effect
+      ctx.save();
+      ctx.shadowBlur = 15 * node.glowIntensity;
+      ctx.shadowColor = node.color;
       ctx.fillStyle = node.color;
+      
+      // Draw main node
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, node.radius * node.glowIntensity, 0, Math.PI * 2);
       ctx.fill();
+      
+      // Draw inner glow
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, node.radius * 0.5, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+      
+      ctx.restore();
     };
 
     const drawConnections = () => {
@@ -57,21 +79,28 @@ export const NeuralBackground = () => {
       nodes.forEach((nodeA, i) => {
         nodes.slice(i + 1).forEach(nodeB => {
           const dx = nodeA.x - nodeB.x;
-          const dy = nodeA.y - nodeB.y;
+          const dy = nodeA.x - nodeB.y;
           const distance = Math.sqrt(dx * dx + dy * dy);
 
           if (distance < CONNECTION_DISTANCE) {
-            const opacity = 1 - (distance / CONNECTION_DISTANCE);
+            const opacity = (1 - (distance / CONNECTION_DISTANCE)) * 
+                          Math.min(nodeA.glowIntensity, nodeB.glowIntensity);
+            
             ctx.beginPath();
             ctx.moveTo(nodeA.x, nodeA.y);
             ctx.lineTo(nodeB.x, nodeB.y);
             
+            // Create gradient with glow effect
             const gradient = ctx.createLinearGradient(nodeA.x, nodeA.y, nodeB.x, nodeB.y);
-            gradient.addColorStop(0, nodeA.color + Math.floor(opacity * 255).toString(16).padStart(2, '0'));
-            gradient.addColorStop(1, nodeB.color + Math.floor(opacity * 255).toString(16).padStart(2, '0'));
+            gradient.addColorStop(0, `${nodeA.color}${Math.floor(opacity * 255).toString(16).padStart(2, '0')}`);
+            gradient.addColorStop(1, `${nodeB.color}${Math.floor(opacity * 255).toString(16).padStart(2, '0')}`);
             
             ctx.strokeStyle = gradient;
             ctx.lineWidth = opacity * 2;
+            
+            // Add glow effect to connections
+            ctx.shadowBlur = 10 * opacity;
+            ctx.shadowColor = nodeA.color;
             ctx.stroke();
           }
         });
@@ -81,11 +110,19 @@ export const NeuralBackground = () => {
     const updateNodes = () => {
       const nodes = nodesRef.current;
       nodes.forEach(node => {
+        // Update position
         node.x += node.vx;
         node.y += node.vy;
 
+        // Bounce off walls
         if (node.x < 0 || node.x > canvas.width) node.vx *= -1;
         if (node.y < 0 || node.y > canvas.height) node.vy *= -1;
+
+        // Update glow intensity
+        node.glowIntensity += GLOW_SPEED * node.glowDirection;
+        if (node.glowIntensity >= MAX_GLOW || node.glowIntensity <= MIN_GLOW) {
+          node.glowDirection *= -1;
+        }
       });
     };
 
@@ -120,8 +157,11 @@ export const NeuralBackground = () => {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 w-full h-full bg-neural-bg"
-      style={{ WebkitBackdropFilter: 'blur(8px)', backdropFilter: 'blur(8px)' }}
+      className="fixed inset-0 w-full h-full bg-neural-bg animate-breathe"
+      style={{ 
+        WebkitBackdropFilter: 'blur(8px)', 
+        backdropFilter: 'blur(8px)',
+      }}
     />
   );
 };
