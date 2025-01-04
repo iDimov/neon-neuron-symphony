@@ -53,7 +53,7 @@ const COLORS = [
 
 const NODE_COUNT = 45;
 const CONNECTION_DISTANCE = 300;
-const MAX_CONNECTIONS_PER_NODE = 3;
+const MAX_CONNECTIONS_PER_NODE = 1;
 const BASE_SPEED = 0.15;
 const GLOW_SPEED = 0.002; // Even slower for smoother transitions
 const MAX_GLOW = 2.0; // Slightly higher max glow
@@ -66,7 +66,7 @@ const MOUSE_REPEL_STRENGTH = 1.8; // Slightly reduced
 const MOUSE_ATTRACT_STRENGTH = 0.4; // Slightly stronger attract
 const MOUSE_FORCE_TRANSITION = 0.7; // Point where repel changes to attract
 const MOUSE_GLOW_INTENSITY = 2.0; // Reduced for more subtle glow
-const VELOCITY_DAMPENING = 0.95; // Less dampening for more movement
+const VELOCITY_DAMPENING = 0.92; // Less dampening for more continuous movement
 const FORCE_FIELD_STRENGTH = 0.7; // Reduced force
 const MOUSE_VELOCITY_MEMORY = 0.95; // Increased for smoother mouse tracking
 const Z_FORCE_MULTIPLIER = 0.15; // More subtle depth movement
@@ -88,6 +88,11 @@ const MOVEMENT_VARIATION = 0.6; // More variation
 const RETURN_FORCE = 0.0002; // Less return force for more freedom
 const MAX_OFFSET = 45; // Larger movement radius
 const GLOW_VARIATION = 0.35; // More glow variation
+
+// Add these new constants for more complex movement
+const MICRO_MOVEMENT_SPEED = 0.003; // Speed of micro-movements
+const WAVE_MOVEMENT_SPEED = 0.001; // Speed of wave-like movements
+const MOVEMENT_AMPLITUDE = 0.6; // Amplitude of movements
 
 export const NeuralBackground = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -519,24 +524,36 @@ export const NeuralBackground = () => {
       
       // More complex, organic movement pattern
       const dx = (
+        // Base movement
         Math.sin(timeOffset) * Math.cos(timeOffset * 0.7) * BASE_MOVEMENT_RANGE +
+        // Medium frequency movements
         Math.sin(timeOffset * 0.4) * MOVEMENT_VARIATION +
-        Math.cos(timeOffset * 0.3) * MOVEMENT_VARIATION * 0.5 +
-        Math.sin(timeOffset * 1.5) * MOVEMENT_VARIATION * 0.4 + // Faster component
-        Math.cos(timeOffset * 0.2) * MOVEMENT_VARIATION * 0.3   // Slower component
+        Math.cos(timeOffset * 0.3) * MOVEMENT_VARIATION * 0.8 +
+        // Fast micro-movements
+        Math.sin(timeOffset * 2.2) * MOVEMENT_VARIATION * 0.3 +
+        Math.cos(timeOffset * 2.5) * MOVEMENT_VARIATION * 0.2 +
+        // Slow wave-like movement
+        Math.sin(timeOffset * 0.1 + node.oscillationOffset) * MOVEMENT_AMPLITUDE
       );
       const dy = (
+        // Base movement
         Math.cos(timeOffset * 0.8) * Math.sin(timeOffset * 0.5) * BASE_MOVEMENT_RANGE +
+        // Medium frequency movements
         Math.cos(timeOffset * 0.6) * MOVEMENT_VARIATION +
-        Math.sin(timeOffset * 0.4) * MOVEMENT_VARIATION * 0.5 +
-        Math.cos(timeOffset * 1.4) * MOVEMENT_VARIATION * 0.4 + // Faster component
-        Math.sin(timeOffset * 0.3) * MOVEMENT_VARIATION * 0.3   // Slower component
+        Math.sin(timeOffset * 0.4) * MOVEMENT_VARIATION * 0.8 +
+        // Fast micro-movements
+        Math.cos(timeOffset * 2.3) * MOVEMENT_VARIATION * 0.3 +
+        Math.sin(timeOffset * 2.6) * MOVEMENT_VARIATION * 0.2 +
+        // Slow wave-like movement
+        Math.cos(timeOffset * 0.1 + node.oscillationOffset) * MOVEMENT_AMPLITUDE
       );
       const dz = (
-        Math.sin(timeOffset * 0.3) * 0.4 +
-        Math.cos(timeOffset * 0.5) * 0.3 +
-        Math.sin(timeOffset * 0.8) * 0.2 +
-        Math.cos(timeOffset * 1.2) * 0.1  // Added faster Z movement
+        Math.sin(timeOffset * 0.3) * 0.6 +
+        Math.cos(timeOffset * 0.5) * 0.4 +
+        Math.sin(timeOffset * 0.8) * 0.3 +
+        Math.cos(timeOffset * 1.6) * 0.2 +
+        // Add more varied Z movement
+        Math.sin(timeOffset * 2.2 + node.oscillationOffset) * 0.15
       );
 
       // Calculate return force to original position with easing
@@ -546,9 +563,9 @@ export const NeuralBackground = () => {
       const returnForceY = distanceY * RETURN_FORCE * (1 + Math.abs(distanceY) / MAX_OFFSET);
 
       // Apply forces with reduced strength
-      node.vx += (dx * deltaTime * 0.005) + returnForceX;
-      node.vy += (dy * deltaTime * 0.005) + returnForceY;
-      node.vz += dz * deltaTime * 0.005;
+      node.vx += (dx * deltaTime * 0.01) + returnForceX;
+      node.vy += (dy * deltaTime * 0.01) + returnForceY;
+      node.vz += dz * deltaTime * 0.01;
 
       // Update initial scale for fade-in animation
       if (progress < 1) {
