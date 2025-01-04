@@ -52,18 +52,15 @@ export const NeuralBackground = () => {
     const drawNode = (node: Node) => {
       if (!ctx) return;
       
-      // Draw glow effect
       ctx.save();
       ctx.shadowBlur = 15 * node.glowIntensity;
       ctx.shadowColor = node.color;
       ctx.fillStyle = node.color;
       
-      // Draw main node
       ctx.beginPath();
       ctx.arc(node.x, node.y, node.radius * node.glowIntensity, 0, Math.PI * 2);
       ctx.fill();
       
-      // Draw inner glow
       ctx.beginPath();
       ctx.arc(node.x, node.y, node.radius * 0.5, 0, Math.PI * 2);
       ctx.fillStyle = '#ffffff';
@@ -79,7 +76,7 @@ export const NeuralBackground = () => {
       nodes.forEach((nodeA, i) => {
         nodes.slice(i + 1).forEach(nodeB => {
           const dx = nodeA.x - nodeB.x;
-          const dy = nodeA.x - nodeB.y;
+          const dy = nodeA.y - nodeB.y;
           const distance = Math.sqrt(dx * dx + dy * dy);
 
           if (distance < CONNECTION_DISTANCE) {
@@ -90,15 +87,15 @@ export const NeuralBackground = () => {
             ctx.moveTo(nodeA.x, nodeA.y);
             ctx.lineTo(nodeB.x, nodeB.y);
             
-            // Create gradient with glow effect
+            // Create gradient with properly formatted hex opacity
             const gradient = ctx.createLinearGradient(nodeA.x, nodeA.y, nodeB.x, nodeB.y);
-            gradient.addColorStop(0, `${nodeA.color}${Math.floor(opacity * 255).toString(16).padStart(2, '0')}`);
-            gradient.addColorStop(1, `${nodeB.color}${Math.floor(opacity * 255).toString(16).padStart(2, '0')}`);
+            const opacityHex = Math.floor(opacity * 255).toString(16).padStart(2, '0');
+            gradient.addColorStop(0, `${nodeA.color}${opacityHex}`);
+            gradient.addColorStop(1, `${nodeB.color}${opacityHex}`);
             
             ctx.strokeStyle = gradient;
             ctx.lineWidth = opacity * 2;
             
-            // Add glow effect to connections
             ctx.shadowBlur = 10 * opacity;
             ctx.shadowColor = nodeA.color;
             ctx.stroke();
@@ -110,15 +107,12 @@ export const NeuralBackground = () => {
     const updateNodes = () => {
       const nodes = nodesRef.current;
       nodes.forEach(node => {
-        // Update position
         node.x += node.vx;
         node.y += node.vy;
 
-        // Bounce off walls
         if (node.x < 0 || node.x > canvas.width) node.vx *= -1;
         if (node.y < 0 || node.y > canvas.height) node.vy *= -1;
 
-        // Update glow intensity
         node.glowIntensity += GLOW_SPEED * node.glowDirection;
         if (node.glowIntensity >= MAX_GLOW || node.glowIntensity <= MIN_GLOW) {
           node.glowDirection *= -1;
