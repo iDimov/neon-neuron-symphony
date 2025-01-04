@@ -11,6 +11,13 @@ interface Node {
   glowDirection: 1 | -1;
 }
 
+interface Connection {
+  nodeA: Node;
+  nodeB: Node;
+  pulsePosition: number;
+  pulseDirection: 1;
+}
+
 const COLORS = ['#0EA5E9', '#8B5CF6', '#D946EF'];
 const NODE_COUNT = 30;
 const CONNECTION_DISTANCE = 150;
@@ -18,10 +25,12 @@ const SPEED = 0.5;
 const GLOW_SPEED = 0.02;
 const MAX_GLOW = 1.5;
 const MIN_GLOW = 0.5;
+const PULSE_SPEED = 0.02;
 
 export const NeuralBackground = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const nodesRef = useRef<Node[]>([]);
+  const connectionsRef = useRef<Connection[]>([]);
   const animationFrameRef = useRef<number>();
 
   useEffect(() => {
@@ -69,9 +78,9 @@ export const NeuralBackground = () => {
       ctx.restore();
     };
 
-    const drawConnections = () => {
-      if (!ctx) return;
+    const updateConnections = () => {
       const nodes = nodesRef.current;
+      connectionsRef.current = [];
 
       nodes.forEach((nodeA, i) => {
         nodes.slice(i + 1).forEach(nodeB => {
@@ -80,29 +89,61 @@ export const NeuralBackground = () => {
           const distance = Math.sqrt(dx * dx + dy * dy);
 
           if (distance < CONNECTION_DISTANCE) {
-            const opacity = (1 - (distance / CONNECTION_DISTANCE)) * 
-                          Math.min(nodeA.glowIntensity, nodeB.glowIntensity);
-            
-            ctx.beginPath();
-            ctx.moveTo(nodeA.x, nodeA.y);
-            ctx.lineTo(nodeB.x, nodeB.y);
-            
-            // Ensure opacity is between 0 and 255 before converting to hex
-            const opacityValue = Math.max(0, Math.min(255, Math.floor(opacity * 255)));
-            const opacityHex = opacityValue.toString(16).padStart(2, '0');
-            
-            const gradient = ctx.createLinearGradient(nodeA.x, nodeA.y, nodeB.x, nodeB.y);
-            gradient.addColorStop(0, `${nodeA.color}${opacityHex}`);
-            gradient.addColorStop(1, `${nodeB.color}${opacityHex}`);
-            
-            ctx.strokeStyle = gradient;
-            ctx.lineWidth = opacity * 2;
-            
-            ctx.shadowBlur = 10 * opacity;
-            ctx.shadowColor = nodeA.color;
-            ctx.stroke();
+            connectionsRef.current.push({
+              nodeA,
+              nodeB,
+              pulsePosition: Math.random(),
+              pulseDirection: 1,
+            });
           }
         });
+      });
+    };
+
+    const drawConnections = () => {
+      if (!ctx) return;
+      const connections = connectionsRef.current;
+
+      connections.forEach(connection => {
+        const { nodeA, nodeB, pulsePosition } = connection;
+        const dx = nodeB.x - nodeA.x;
+        const dy = nodeB.y - nodeA.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        // Draw the base connection line
+        const baseOpacity = 0.2;
+        ctx.beginPath();
+        ctx.moveTo(nodeA.x, nodeA.y);
+        ctx.lineTo(nodeB.x, nodeB.y);
+
+        // Ensure opacity is between 0 and 255 before converting to hex
+        const opacityValue = Math.max(0, Math.min(255, Math.floor(baseOpacity * 255)));
+        const opacityHex = opacityValue.toString(16).padStart(2, '0');
+        
+        const gradient = ctx.createLinearGradient(nodeA.x, nodeA.y, nodeB.x, nodeB.y);
+        gradient.addColorStop(0, `${nodeA.color}${opacityHex}`);
+        gradient.addColorStop(1, `${nodeB.color}${opacityHex}`);
+        
+        ctx.strokeStyle = gradient;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // Draw the pulse
+        const pulseX = nodeA.x + dx * pulsePosition;
+        const pulseY = nodeA.y + dy * pulsePosition;
+        
+        ctx.beginPath();
+        ctx.arc(pulseX, pulseY, 2, 0, Math.PI * 2);
+        ctx.fillStyle = `${nodeA.color}FF`;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = nodeA.color;
+        ctx.fill();
+
+        // Update pulse position
+        connection.pulsePosition += PULSE_SPEED;
+        if (connection.pulsePosition > 1) {
+          connection.pulsePosition = 0;
+        }
       });
     };
 
@@ -127,6 +168,7 @@ export const NeuralBackground = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
       updateNodes();
+      updateConnections();
       drawConnections();
       nodesRef.current.forEach(drawNode);
       
