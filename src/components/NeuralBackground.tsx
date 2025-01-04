@@ -25,7 +25,8 @@ const SPEED = 0.5;
 const GLOW_SPEED = 0.02;
 const MAX_GLOW = 1.5;
 const MIN_GLOW = 0.5;
-const PULSE_SPEED = 0.02;
+const PULSE_SPEED = 0.005; // Slowed down from 0.02
+const CONNECTION_PROBABILITY = 0.3; // Added to reduce connection frequency
 
 export const NeuralBackground = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -88,7 +89,8 @@ export const NeuralBackground = () => {
           const dy = nodeA.y - nodeB.y;
           const distance = Math.sqrt(dx * dx + dy * dy);
 
-          if (distance < CONNECTION_DISTANCE) {
+          // Only create connection if within distance AND passes probability check
+          if (distance < CONNECTION_DISTANCE && Math.random() < CONNECTION_PROBABILITY) {
             connectionsRef.current.push({
               nodeA,
               nodeB,
@@ -116,7 +118,6 @@ export const NeuralBackground = () => {
         ctx.moveTo(nodeA.x, nodeA.y);
         ctx.lineTo(nodeB.x, nodeB.y);
 
-        // Ensure opacity is between 0 and 255 before converting to hex
         const opacityValue = Math.max(0, Math.min(255, Math.floor(baseOpacity * 255)));
         const opacityHex = opacityValue.toString(16).padStart(2, '0');
         
@@ -195,7 +196,7 @@ export const NeuralBackground = () => {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 w-full h-full bg-neural-bg animate-breathe"
+      className="fixed inset-0 w-full h-full bg-neural-bg"
       style={{ 
         WebkitBackdropFilter: 'blur(8px)', 
         backdropFilter: 'blur(8px)',
