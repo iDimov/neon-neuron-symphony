@@ -27,6 +27,10 @@ interface Connection {
   lifetime: number;
   width: number;
   initialOpacity: number; // For fade-in animation
+  pulses: {
+    position: number;
+    opacity: number;
+  }[];
 }
 
 interface MousePosition {
@@ -43,15 +47,15 @@ const COLORS = [
   "#2DD4BF", // Teal
 ];
 
-const NODE_COUNT = 100;
+const NODE_COUNT = 55;
 const CONNECTION_DISTANCE = 300;
 const MAX_CONNECTIONS_PER_NODE = 3;
 const BASE_SPEED = 0.15;
 const GLOW_SPEED = 0.006;
 const MAX_GLOW = 1.8;
 const MIN_GLOW = 0.3;
-const PULSE_SPEED = 0.008;
-const MIN_CONNECTION_LIFETIME = 300;
+const PULSE_SPEED = 0.01; // Slightly slower for smoother movement
+const MIN_CONNECTION_LIFETIME = 800; // Longer lifetime for more stable connections
 const CONNECTION_UPDATE_INTERVAL = 90;
 const MOUSE_INFLUENCE_RADIUS = 250;
 const MOUSE_REPEL_STRENGTH = 0.6;
@@ -62,6 +66,9 @@ const INITIAL_ANIMATION_DURATION = 3000; // Duration of initial animation in ms
 const WAVE_FREQUENCY = 0.001; // Slightly faster wave animation
 const PULSE_SIZE_MIN = 1; // New constant
 const PULSE_SIZE_MAX = 5; // New constant
+const MAX_PULSE_COUNT = 1; // Maximum number of pulses per connection
+const PULSE_SPAWN_CHANCE = 0.01; // Lower chance to make pulses more rare
+const PULSE_FADE_SPEED = 0.005; // New constant for controlling fade out speed
 
 export const NeuralBackground = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -305,6 +312,7 @@ export const NeuralBackground = () => {
               connectionsRef.current.push({
                 nodeA,
                 nodeB,
+                pulses: [],
                 pulsePosition: Math.random(),
                 pulseDirection: 1,
                 strength: 1 - distance / CONNECTION_DISTANCE,
@@ -379,50 +387,61 @@ export const NeuralBackground = () => {
       ctx.lineWidth = width * depthAlpha;
       ctx.stroke();
 
-      // Calculate pulse position along the curve
-      const t = pulsePosition;
-      const pulseX = Math.pow(1 - t, 2) * nodeA.x + 
-                     2 * (1 - t) * t * controlX + 
-                     Math.pow(t, 2) * nodeB.x;
-      const pulseY = Math.pow(1 - t, 2) * nodeA.y + 
-                     2 * (1 - t) * t * controlY + 
-                     Math.pow(t, 2) * nodeB.y;
-
-      // Enhanced pulse effect
-      const pulseSize = (PULSE_SIZE_MIN + 
-        Math.sin(pulsePosition * Math.PI) * (PULSE_SIZE_MAX - PULSE_SIZE_MIN)) * 
-        depthAlpha;
-      const pulseGradient = ctx.createRadialGradient(
-        pulseX,
-        pulseY,
-        0,
-        pulseX,
-        pulseY,
-        pulseSize
-      );
-      
-      const pulseOpacity = Math.sin(pulsePosition * Math.PI) * opacity;
-      pulseGradient.addColorStop(0, `${nodeA.color}${Math.floor(255 * pulseOpacity)
-        .toString(16)
-        .padStart(2, "0")}`);
-      pulseGradient.addColorStop(0.3, `${nodeA.color}${Math.floor(180 * pulseOpacity)
-        .toString(16)
-        .padStart(2, "0")}`);
-      pulseGradient.addColorStop(0.6, `${nodeA.color}${Math.floor(100 * pulseOpacity)
-        .toString(16)
-        .padStart(2, "0")}`);
-      pulseGradient.addColorStop(1, "transparent");
-
-      ctx.beginPath();
-      ctx.arc(pulseX, pulseY, pulseSize, 0, Math.PI * 2);
-      ctx.fillStyle = pulseGradient;
-      ctx.fill();
-
-      // Update pulse position
-      connection.pulsePosition += PULSE_SPEED * deltaTime;
-      if (connection.pulsePosition > 1) {
-        connection.pulsePosition = 0;
+      // Pulse management
+      if (connection.pulses.length < MAX_PULSE_COUNT && Math.random() < PULSE_SPAWN_CHANCE) {
+        connection.pulses.push({
+          position: 0,
+          opacity: 1
+        });
       }
+
+      // Update and draw each pulse
+      connection.pulses = connection.pulses.filter(pulse => {
+        const t = pulse.position;
+        const pulseX = Math.pow(1 - t, 2) * nodeA.x + 
+                       2 * (1 - t) * t * controlX + 
+                       Math.pow(t, 2) * nodeB.x;
+        const pulseY = Math.pow(1 - t, 2) * nodeA.y + 
+                       2 * (1 - t) * t * controlY + 
+                       Math.pow(t, 2) * nodeB.y;
+
+        const pulseSize = (PULSE_SIZE_MIN + 
+          Math.sin(pulse.position * Math.PI) * (PULSE_SIZE_MAX - PULSE_SIZE_MIN)) * 
+          depthAlpha;
+
+        const pulseGradient = ctx.createRadialGradient(
+          pulseX,
+          pulseY,
+          0,
+          pulseX,
+          pulseY,
+          pulseSize
+        );
+        
+        const pulseOpacity = pulse.opacity * Math.sin(pulse.position * Math.PI) * opacity;
+        pulseGradient.addColorStop(0, `${nodeA.color}${Math.floor(255 * pulseOpacity)
+          .toString(16)
+          .padStart(2, "0")}`);
+        pulseGradient.addColorStop(0.3, `${nodeA.color}${Math.floor(180 * pulseOpacity)
+          .toString(16)
+          .padStart(2, "0")}`);
+        pulseGradient.addColorStop(0.6, `${nodeA.color}${Math.floor(100 * pulseOpacity)
+          .toString(16)
+          .padStart(2, "0")}`);
+        pulseGradient.addColorStop(1, "transparent");
+
+        ctx.beginPath();
+        ctx.arc(pulseX, pulseY, pulseSize, 0, Math.PI * 2);
+        ctx.fillStyle = pulseGradient;
+        ctx.fill();
+
+        // Update pulse position
+        pulse.position += PULSE_SPEED * deltaTime;
+        pulse.opacity = Math.max(0, pulse.opacity - PULSE_FADE_SPEED * deltaTime);
+
+        // Keep pulse if it hasn't reached the end
+        return pulse.position <= 1 && pulse.opacity > 0;
+      });
     });
   };
 
