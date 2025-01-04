@@ -47,7 +47,7 @@ const COLORS = [
   "#2DD4BF", // Teal
 ];
 
-const NODE_COUNT = 55;
+const NODE_COUNT = 45;
 const CONNECTION_DISTANCE = 300;
 const MAX_CONNECTIONS_PER_NODE = 3;
 const BASE_SPEED = 0.15;
@@ -57,10 +57,15 @@ const MIN_GLOW = 0.3;
 const PULSE_SPEED = 0.01; // Slightly slower for smoother movement
 const MIN_CONNECTION_LIFETIME = 800; // Longer lifetime for more stable connections
 const CONNECTION_UPDATE_INTERVAL = 90;
-const MOUSE_INFLUENCE_RADIUS = 250;
-const MOUSE_REPEL_STRENGTH = 0.6;
-const MOUSE_ATTRACT_STRENGTH = 0.2;
-const OSCILLATION_SPEED_RANGE = [0.001, 0.005];
+const MOUSE_INFLUENCE_RADIUS = 350; // Slightly reduced
+const MOUSE_REPEL_STRENGTH = 1.8; // Slightly reduced
+const MOUSE_ATTRACT_STRENGTH = 0.4; // Slightly stronger attract
+const MOUSE_FORCE_TRANSITION = 0.7; // Point where repel changes to attract
+const MOUSE_GLOW_INTENSITY = 2.0; // Reduced for more subtle glow
+const VELOCITY_DAMPENING = 0.96; // Smoother deceleration
+const FORCE_FIELD_STRENGTH = 0.6; // Reduced for smoother movement
+const MOUSE_VELOCITY_MEMORY = 0.92; // For smooth mouse movement
+const Z_FORCE_MULTIPLIER = 0.3; // Reduced for more subtle 3D effect
 const Z_RANGE = 300; // Maximum Z-depth for 3D effect
 const INITIAL_ANIMATION_DURATION = 3000; // Duration of initial animation in ms
 const WAVE_FREQUENCY = 0.001; // Slightly faster wave animation
@@ -69,6 +74,7 @@ const PULSE_SIZE_MAX = 5; // New constant
 const MAX_PULSE_COUNT = 1; // Maximum number of pulses per connection
 const PULSE_SPAWN_CHANCE = 0.01; // Lower chance to make pulses more rare
 const PULSE_FADE_SPEED = 0.005; // New constant for controlling fade out speed
+const OSCILLATION_SPEED_RANGE = [0.001, 0.003]; // Slightly slower for smoother movement
 
 export const NeuralBackground = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -80,6 +86,8 @@ export const NeuralBackground = () => {
   const frameCountRef = useRef<number>(0);
   const animationFrameRef = useRef<number>();
   const mousePositionRef = useRef<MousePosition>({ x: 0, y: 0, active: false });
+  const prevMousePosition = useRef({ x: 0, y: 0 });
+  const mouseVelocity = useRef({ x: 0, y: 0 });
 
   const initNodes = (width: number, height: number) => {
     return Array.from({ length: NODE_COUNT }, () => {
@@ -107,34 +115,29 @@ export const NeuralBackground = () => {
     });
   };
 
-  const handleMouseMove = useCallback(
-    (event: React.MouseEvent<HTMLCanvasElement>) => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-
-      const rect = canvas.getBoundingClientRect();
-      mousePositionRef.current = {
-        x: event.clientX - rect.left,
-        y: event.clientY - rect.top,
-        active: true,
-      };
-    },
-    []
-  );
-
-  const handleMouseLeave = useCallback(
-    (event: React.MouseEvent<HTMLCanvasElement>) => {
-      mousePositionRef.current.active = false;
-    },
-    []
-  );
-
   const calculateScale = (z: number) => {
     return 1 + (z / Z_RANGE) * 0.5; // Scale between 0.5 and 1.5 based on Z position
   };
 
   const applyMouseInfluence = (node: Node, deltaTime: number) => {
-    if (!mousePositionRef.current.active) return;
+    if (!mousePositionRef.current.active) {
+      // Gradual return to normal state when mouse leaves
+      node.glowIntensity = Math.max(
+        MIN_GLOW,
+        node.glowIntensity - deltaTime * 0.1
+      );
+      return;
+    }
+
+    // Calculate mouse velocity with smoothing
+    mouseVelocity.current.x = mouseVelocity.current.x * MOUSE_VELOCITY_MEMORY + 
+      (mousePositionRef.current.x - prevMousePosition.current.x) * (1 - MOUSE_VELOCITY_MEMORY);
+    mouseVelocity.current.y = mouseVelocity.current.y * MOUSE_VELOCITY_MEMORY + 
+      (mousePositionRef.current.y - prevMousePosition.current.y) * (1 - MOUSE_VELOCITY_MEMORY);
+
+    const mouseSpeed = Math.sqrt(
+      mouseVelocity.current.x ** 2 + mouseVelocity.current.y ** 2
+    );
 
     const scale = calculateScale(node.z);
     const dx = mousePositionRef.current.x - node.x;
@@ -142,21 +145,49 @@ export const NeuralBackground = () => {
     const distance = Math.sqrt(dx * dx + dy * dy) / scale;
 
     if (distance < MOUSE_INFLUENCE_RADIUS) {
-      const influence = (1 - distance / MOUSE_INFLUENCE_RADIUS) ** 2;
-      const strength =
-        distance < MOUSE_INFLUENCE_RADIUS * 0.4
-          ? -MOUSE_REPEL_STRENGTH
-          : MOUSE_ATTRACT_STRENGTH;
+      // Smooth influence falloff
+      const influence = Math.pow(1 - distance / MOUSE_INFLUENCE_RADIUS, 2);
+      
+      // Dynamic force field effect
+      const angle = Math.atan2(dy, dx);
+      const forceFieldX = Math.cos(angle + Math.PI / 2);
+      const forceFieldY = Math.sin(angle + Math.PI / 2);
 
-      node.vx += (dx / distance) * influence * strength * deltaTime;
-      node.vy += (dy / distance) * influence * strength * deltaTime;
-      node.vz += (Math.random() - 0.5) * influence * strength * deltaTime; // Add some Z movement
+      // Calculate repel/attract strength based on distance
+      const transitionPoint = MOUSE_INFLUENCE_RADIUS * MOUSE_FORCE_TRANSITION;
+      const strength = distance < transitionPoint
+        ? -MOUSE_REPEL_STRENGTH * (1 - distance / transitionPoint)
+        : MOUSE_ATTRACT_STRENGTH * (distance - transitionPoint) / (MOUSE_INFLUENCE_RADIUS - transitionPoint);
 
-      node.glowIntensity = Math.min(
-        MAX_GLOW * 1.2,
-        node.glowIntensity + influence * 0.1
-      );
+      // Apply forces with mouse velocity influence
+      const velocityEffect = Math.min(0.1, mouseSpeed * 0.03); // Cap the velocity effect
+      node.vx += (
+        (dx / distance) * influence * strength + 
+        forceFieldX * FORCE_FIELD_STRENGTH * influence +
+        mouseVelocity.current.x * velocityEffect
+      ) * deltaTime;
+      
+      node.vy += (
+        (dy / distance) * influence * strength + 
+        forceFieldY * FORCE_FIELD_STRENGTH * influence +
+        mouseVelocity.current.y * velocityEffect
+      ) * deltaTime;
+
+      // Dynamic Z-axis movement
+      if (distance < transitionPoint) {
+        const zForce = (Math.sin(distance / transitionPoint * Math.PI) * 
+          Z_FORCE_MULTIPLIER * influence * strength);
+        node.vz += zForce * deltaTime;
+      }
+
+      // Enhanced glow effect
+      const targetGlow = MAX_GLOW * MOUSE_GLOW_INTENSITY * influence;
+      node.glowIntensity = node.glowIntensity * 0.9 + targetGlow * 0.1;
     }
+
+    // Update previous mouse position
+    prevMousePosition.current.x = mousePositionRef.current.x;
+    prevMousePosition.current.y = mousePositionRef.current.y;
   };
 
   const drawNode = (
@@ -340,10 +371,13 @@ export const NeuralBackground = () => {
     });
 
     sortedConnections.forEach((connection) => {
-      const { nodeA, nodeB, pulsePosition, strength, width } = connection;
+      const { nodeA, nodeB, strength, width } = connection;
       const dx = nodeB.x - nodeA.x;
       const dy = nodeB.y - nodeA.y;
       const dz = nodeB.z - nodeB.z;
+
+      // Safety check for zero distance
+      const distance = Math.max(0.001, Math.sqrt(dx * dx + dy * dy + dz * dz));
 
       const avgZ = (nodeA.z + nodeB.z) / 2;
       const depthAlpha = Math.max(0, 1 - Math.abs(avgZ) / Z_RANGE);
@@ -354,18 +388,20 @@ export const NeuralBackground = () => {
       );
       const opacity = progress * connection.initialOpacity * depthAlpha;
 
-      // Calculate curve control point
-      const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+      // Calculate curve control point with safety checks
       const midX = (nodeA.x + nodeB.x) / 2;
       const midY = (nodeA.y + nodeB.y) / 2;
       const waveAmplitude = Math.min(15, distance * 0.1) * depthAlpha;
       const waveOffset = Math.sin(timestamp * WAVE_FREQUENCY + nodeA.oscillationOffset) * waveAmplitude;
+      
+      // Ensure perpendicular vectors are normalized
       const perpX = -dy / distance;
       const perpY = dx / distance;
+      
       const controlX = midX + perpX * waveOffset;
       const controlY = midY + perpY * waveOffset;
 
-      // Draw the curved path
+      // Draw connection line
       ctx.beginPath();
       ctx.moveTo(nodeA.x, nodeA.y);
       ctx.quadraticCurveTo(controlX, controlY, nodeB.x, nodeB.y);
@@ -376,7 +412,7 @@ export const NeuralBackground = () => {
         nodeB.x,
         nodeB.y
       );
-      const alpha = Math.floor(strength * 0.4 * opacity * 255)
+      const alpha = Math.floor(Math.max(0, Math.min(255, strength * 0.4 * opacity * 255)))
         .toString(16)
         .padStart(2, "0");
       gradient.addColorStop(0, `${nodeA.color}${alpha}`);
@@ -384,10 +420,10 @@ export const NeuralBackground = () => {
       gradient.addColorStop(1, `${nodeB.color}${alpha}`);
 
       ctx.strokeStyle = gradient;
-      ctx.lineWidth = width * depthAlpha;
+      ctx.lineWidth = Math.max(0.1, width * depthAlpha);
       ctx.stroke();
 
-      // Pulse management
+      // Pulse management with safety checks
       if (connection.pulses.length < MAX_PULSE_COUNT && Math.random() < PULSE_SPAWN_CHANCE) {
         connection.pulses.push({
           position: 0,
@@ -395,9 +431,9 @@ export const NeuralBackground = () => {
         });
       }
 
-      // Update and draw each pulse
+      // Update and draw each pulse with safety checks
       connection.pulses = connection.pulses.filter(pulse => {
-        const t = pulse.position;
+        const t = Math.max(0, Math.min(1, pulse.position));
         const pulseX = Math.pow(1 - t, 2) * nodeA.x + 
                        2 * (1 - t) * t * controlX + 
                        Math.pow(t, 2) * nodeB.x;
@@ -405,42 +441,46 @@ export const NeuralBackground = () => {
                        2 * (1 - t) * t * controlY + 
                        Math.pow(t, 2) * nodeB.y;
 
-        const pulseSize = (PULSE_SIZE_MIN + 
+        // Ensure pulse size is finite and positive
+        const pulseSize = Math.max(0.1, Math.min(10, (PULSE_SIZE_MIN + 
           Math.sin(pulse.position * Math.PI) * (PULSE_SIZE_MAX - PULSE_SIZE_MIN)) * 
-          depthAlpha;
+          depthAlpha));
 
-        const pulseGradient = ctx.createRadialGradient(
-          pulseX,
-          pulseY,
-          0,
-          pulseX,
-          pulseY,
-          pulseSize
-        );
-        
-        const pulseOpacity = pulse.opacity * Math.sin(pulse.position * Math.PI) * opacity;
-        pulseGradient.addColorStop(0, `${nodeA.color}${Math.floor(255 * pulseOpacity)
-          .toString(16)
-          .padStart(2, "0")}`);
-        pulseGradient.addColorStop(0.3, `${nodeA.color}${Math.floor(180 * pulseOpacity)
-          .toString(16)
-          .padStart(2, "0")}`);
-        pulseGradient.addColorStop(0.6, `${nodeA.color}${Math.floor(100 * pulseOpacity)
-          .toString(16)
-          .padStart(2, "0")}`);
-        pulseGradient.addColorStop(1, "transparent");
+        try {
+          const pulseGradient = ctx.createRadialGradient(
+            pulseX,
+            pulseY,
+            0,
+            pulseX,
+            pulseY,
+            pulseSize
+          );
+          
+          const pulseOpacity = Math.max(0, Math.min(1, pulse.opacity * Math.sin(pulse.position * Math.PI) * opacity));
+          pulseGradient.addColorStop(0, `${nodeA.color}${Math.floor(255 * pulseOpacity)
+            .toString(16)
+            .padStart(2, "0")}`);
+          pulseGradient.addColorStop(0.3, `${nodeA.color}${Math.floor(180 * pulseOpacity)
+            .toString(16)
+            .padStart(2, "0")}`);
+          pulseGradient.addColorStop(0.6, `${nodeA.color}${Math.floor(100 * pulseOpacity)
+            .toString(16)
+            .padStart(2, "0")}`);
+          pulseGradient.addColorStop(1, "transparent");
 
-        ctx.beginPath();
-        ctx.arc(pulseX, pulseY, pulseSize, 0, Math.PI * 2);
-        ctx.fillStyle = pulseGradient;
-        ctx.fill();
+          ctx.beginPath();
+          ctx.arc(pulseX, pulseY, pulseSize, 0, Math.PI * 2);
+          ctx.fillStyle = pulseGradient;
+          ctx.fill();
+        } catch (error) {
+          console.debug('Skipping invalid pulse render');
+        }
 
-        // Update pulse position
-        pulse.position += PULSE_SPEED * deltaTime;
+        // Update pulse position with safety checks
+        pulse.position = Math.min(1, pulse.position + PULSE_SPEED * deltaTime);
         pulse.opacity = Math.max(0, pulse.opacity - PULSE_FADE_SPEED * deltaTime);
 
-        // Keep pulse if it hasn't reached the end
-        return pulse.position <= 1 && pulse.opacity > 0;
+        return pulse.position < 1 && pulse.opacity > 0;
       });
     });
   };
@@ -466,10 +506,10 @@ export const NeuralBackground = () => {
       node.y += node.vy * deltaTime;
       node.z += node.vz * deltaTime;
 
-      // Smooth deceleration
-      node.vx *= 0.98;
-      node.vy *= 0.98;
-      node.vz *= 0.98;
+      // Smoother deceleration
+      node.vx *= Math.pow(VELOCITY_DAMPENING, deltaTime);
+      node.vy *= Math.pow(VELOCITY_DAMPENING, deltaTime);
+      node.vz *= Math.pow(VELOCITY_DAMPENING, deltaTime);
 
       // Enhanced boundary behavior with Z-axis
       const boundaryForce = 0.002 * deltaTime;
@@ -493,7 +533,7 @@ export const NeuralBackground = () => {
     });
   };
 
-  const animate = (timestamp: number) => {
+  const animate = useCallback((timestamp: number) => {
     const canvas = canvasRef.current;
     const ctx = ctxRef.current;
     if (!canvas || !ctx) return;
@@ -527,7 +567,7 @@ export const NeuralBackground = () => {
     sortedNodes.forEach((node) => drawNode(ctx, node, timestamp, progress));
 
     animationFrameRef.current = requestAnimationFrame(animate);
-  };
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -545,27 +585,46 @@ export const NeuralBackground = () => {
       startTimeRef.current = 0; // Reset animation on resize
     };
 
+    // Convert the React event handlers to native DOM event handlers
+    const handleMouseMoveNative = (event: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      
+      mousePositionRef.current = {
+        x: (event.clientX - rect.left) * scaleX,
+        y: (event.clientY - rect.top) * scaleY,
+        active: true,
+      };
+    };
+
+    const handleMouseLeaveNative = () => {
+      mousePositionRef.current.active = false;
+    };
+
     handleResize();
+    
+    // Add native event listeners directly to the canvas
+    canvas.addEventListener("mousemove", handleMouseMoveNative);
+    canvas.addEventListener("mouseleave", handleMouseLeaveNative);
     window.addEventListener("resize", handleResize);
-    canvas.addEventListener("mousemove", handleMouseMove);
-    canvas.addEventListener("mouseleave", handleMouseLeave);
+    
     animationFrameRef.current = requestAnimationFrame(animate);
 
     return () => {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
+      // Clean up event listeners
+      canvas.removeEventListener("mousemove", handleMouseMoveNative);
+      canvas.removeEventListener("mouseleave", handleMouseLeaveNative);
       window.removeEventListener("resize", handleResize);
-      canvas.removeEventListener("mousemove", handleMouseMove);
-      canvas.removeEventListener("mouseleave", handleMouseLeave);
     };
   }, []);
 
   return (
     <canvas
       ref={canvasRef}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
       className="fixed inset-0 w-full h-full bg-neural-bg"
       style={{
         WebkitBackdropFilter: "blur(8px)",
