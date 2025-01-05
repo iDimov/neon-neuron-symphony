@@ -1,3 +1,4 @@
+import { motion, useScroll, useTransform } from "framer-motion";
 import React, { useCallback, useEffect, useRef } from "react";
 
 interface Node {
@@ -36,13 +37,7 @@ interface Connection {
   drawProgress: number;
 }
 
-const COLORS = [
-  "#67E8F9",
-  "#3B82F6",
-  "#8B5CF6",
-  "#A855F7",
-  "#EC4899",
-];
+const COLORS = ["#67E8F9", "#3B82F6", "#8B5CF6", "#A855F7", "#EC4899"];
 
 const NODE_COUNT = 33; // Further reduced for better performance
 const CONNECTION_DISTANCE = 250;
@@ -80,6 +75,8 @@ export const NeuralBackground = () => {
   const frameCountRef = useRef<number>(0);
   const animationFrameRef = useRef<number>();
   const gradientCacheRef = useRef<Map<string, CanvasGradient>>(new Map());
+  const { scrollY } = useScroll();
+const y = useTransform(scrollY, [0, 300], [0, 50]);
 
   const initNodes = useCallback((width: number, height: number) => {
     return Array.from({ length: NODE_COUNT }, () => {
@@ -100,7 +97,10 @@ export const NeuralBackground = () => {
         color: COLORS[Math.floor(Math.random() * COLORS.length)],
         glowIntensity: Math.random() * (MAX_GLOW - MIN_GLOW) + MIN_GLOW,
         oscillationOffset: Math.random() * Math.PI * 2,
-        oscillationSpeed: OSCILLATION_SPEED_RANGE[0] + Math.random() * (OSCILLATION_SPEED_RANGE[1] - OSCILLATION_SPEED_RANGE[0]),
+        oscillationSpeed:
+          OSCILLATION_SPEED_RANGE[0] +
+          Math.random() *
+            (OSCILLATION_SPEED_RANGE[1] - OSCILLATION_SPEED_RANGE[0]),
         initialScale: 0,
         movementOffset: Math.random() * Math.PI * 2,
         glowWaveOffset: Math.random() * Math.PI * 2,
@@ -113,57 +113,116 @@ export const NeuralBackground = () => {
     return 1 + (z / Z_RANGE) * 0.5;
   }, []);
 
-  const getOrCreateGradient = useCallback((ctx: CanvasRenderingContext2D, key: string, createGradient: () => CanvasGradient) => {
-    if (!gradientCacheRef.current.has(key)) {
-      gradientCacheRef.current.set(key, createGradient());
-    }
-    return gradientCacheRef.current.get(key)!;
-  }, []);
+  const getOrCreateGradient = useCallback(
+    (
+      ctx: CanvasRenderingContext2D,
+      key: string,
+      createGradient: () => CanvasGradient
+    ) => {
+      if (!gradientCacheRef.current.has(key)) {
+        gradientCacheRef.current.set(key, createGradient());
+      }
+      return gradientCacheRef.current.get(key)!;
+    },
+    []
+  );
 
-  const drawNode = useCallback((
-    ctx: CanvasRenderingContext2D,
-    node: Node,
-    timestamp: number,
-    progress: number
-  ) => {
-    const scale = calculateScale(node.z);
-    const currentScale = scale * (progress < 1 ? node.initialScale + (1 - node.initialScale) * progress : 1);
-    const radiusModifier = Math.sin(timestamp * node.oscillationSpeed + node.oscillationOffset) * 0.3 + 1;
-    const currentRadius = node.baseRadius * radiusModifier * currentScale;
-    const alpha = Math.max(0, 1 - Math.abs(node.z) / Z_RANGE);
+  const drawNode = useCallback(
+    (
+      ctx: CanvasRenderingContext2D,
+      node: Node,
+      timestamp: number,
+      progress: number
+    ) => {
+      const scale = calculateScale(node.z);
+      const currentScale =
+        scale *
+        (progress < 1
+          ? node.initialScale + (1 - node.initialScale) * progress
+          : 1);
+      const radiusModifier =
+        Math.sin(timestamp * node.oscillationSpeed + node.oscillationOffset) *
+          0.3 +
+        1;
+      const currentRadius = node.baseRadius * radiusModifier * currentScale;
+      const alpha = Math.max(0, 1 - Math.abs(node.z) / Z_RANGE);
 
-    ctx.save();
+      ctx.save();
 
-    const outerGradient = getOrCreateGradient(ctx, `outer-${node.color}-${alpha}`, () => {
-      const gradient = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, currentRadius * 8);
-      gradient.addColorStop(0, `${node.color}${Math.floor(alpha * 25).toString(16).padStart(2, "0")}`);
-      gradient.addColorStop(0.5, `${node.color}${Math.floor(alpha * 12).toString(16).padStart(2, "0")}`);
-      gradient.addColorStop(1, "transparent");
-      return gradient;
-    });
+      const outerGradient = getOrCreateGradient(
+        ctx,
+        `outer-${node.color}-${alpha}`,
+        () => {
+          const gradient = ctx.createRadialGradient(
+            node.x,
+            node.y,
+            0,
+            node.x,
+            node.y,
+            currentRadius * 8
+          );
+          gradient.addColorStop(
+            0,
+            `${node.color}${Math.floor(alpha * 25)
+              .toString(16)
+              .padStart(2, "0")}`
+          );
+          gradient.addColorStop(
+            0.5,
+            `${node.color}${Math.floor(alpha * 12)
+              .toString(16)
+              .padStart(2, "0")}`
+          );
+          gradient.addColorStop(1, "transparent");
+          return gradient;
+        }
+      );
 
-    ctx.fillStyle = outerGradient;
-    ctx.beginPath();
-    ctx.arc(node.x, node.y, currentRadius * 8, 0, Math.PI * 2);
-    ctx.fill();
+      ctx.fillStyle = outerGradient;
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, currentRadius * 8, 0, Math.PI * 2);
+      ctx.fill();
 
-    ctx.shadowBlur = 12 * node.glowIntensity * currentScale;
-    ctx.shadowColor = node.color;
+      ctx.shadowBlur = 12 * node.glowIntensity * currentScale;
+      ctx.shadowColor = node.color;
 
-    const innerGradient = getOrCreateGradient(ctx, `inner-${node.color}-${alpha}`, () => {
-      const gradient = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, currentRadius * 2);
-      gradient.addColorStop(0, `${node.color}${Math.floor(alpha * 200).toString(16).padStart(2, "0")}`);
-      gradient.addColorStop(1, `${node.color}${Math.floor(alpha * 80).toString(16).padStart(2, "0")}`);
-      return gradient;
-    });
+      const innerGradient = getOrCreateGradient(
+        ctx,
+        `inner-${node.color}-${alpha}`,
+        () => {
+          const gradient = ctx.createRadialGradient(
+            node.x,
+            node.y,
+            0,
+            node.x,
+            node.y,
+            currentRadius * 2
+          );
+          gradient.addColorStop(
+            0,
+            `${node.color}${Math.floor(alpha * 200)
+              .toString(16)
+              .padStart(2, "0")}`
+          );
+          gradient.addColorStop(
+            1,
+            `${node.color}${Math.floor(alpha * 80)
+              .toString(16)
+              .padStart(2, "0")}`
+          );
+          return gradient;
+        }
+      );
 
-    ctx.fillStyle = innerGradient;
-    ctx.beginPath();
-    ctx.arc(node.x, node.y, currentRadius * 2, 0, Math.PI * 2);
-    ctx.fill();
+      ctx.fillStyle = innerGradient;
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, currentRadius * 2, 0, Math.PI * 2);
+      ctx.fill();
 
-    ctx.restore();
-  }, [calculateScale, getOrCreateGradient]);
+      ctx.restore();
+    },
+    [calculateScale, getOrCreateGradient]
+  );
 
   const updateConnections = useCallback(() => {
     const nodes = nodesRef.current;
@@ -174,7 +233,9 @@ export const NeuralBackground = () => {
       conn.drawProgress = Math.min(1, conn.drawProgress + LINE_DRAW_SPEED);
     });
 
-    connectionsRef.current = currentConnections.filter((conn) => conn.lifetime > 0);
+    connectionsRef.current = currentConnections.filter(
+      (conn) => conn.lifetime > 0
+    );
 
     nodes.forEach((node) => (node.connections = 0));
     connectionsRef.current.forEach((conn) => {
@@ -218,164 +279,261 @@ export const NeuralBackground = () => {
     });
   }, []);
 
-  const drawConnections = useCallback((
-    ctx: CanvasRenderingContext2D,
-    deltaTime: number,
-    timestamp: number,
-    progress: number
-  ) => {
-    connectionsRef.current.forEach((connection) => {
-      const { nodeA, nodeB, strength, width } = connection;
-      const dx = nodeB.x - nodeA.x;
-      const dy = nodeB.y - nodeA.y;
-      const dz = nodeB.z - nodeB.z;
-      const distance = Math.max(0.001, Math.sqrt(dx * dx + dy * dy + dz * dz));
-      const avgZ = (nodeA.z + nodeB.z) / 2;
-      const depthAlpha = Math.max(0, 1 - Math.abs(avgZ) / Z_RANGE);
+  const drawConnections = useCallback(
+    (
+      ctx: CanvasRenderingContext2D,
+      deltaTime: number,
+      timestamp: number,
+      progress: number
+    ) => {
+      connectionsRef.current.forEach((connection) => {
+        const { nodeA, nodeB, strength, width } = connection;
+        const dx = nodeB.x - nodeA.x;
+        const dy = nodeB.y - nodeA.y;
+        const dz = nodeB.z - nodeB.z;
+        const distance = Math.max(
+          0.001,
+          Math.sqrt(dx * dx + dy * dy + dz * dz)
+        );
+        const avgZ = (nodeA.z + nodeB.z) / 2;
+        const depthAlpha = Math.max(0, 1 - Math.abs(avgZ) / Z_RANGE);
 
-      connection.initialOpacity = Math.min(1, connection.initialOpacity + deltaTime * 0.01);
-      const opacity = Math.min(1, progress * connection.initialOpacity * depthAlpha * 3);
-      const alpha = Math.floor(Math.max(0, Math.min(255, strength * 0.7 * opacity * 255 * connection.drawProgress)))
-        .toString(16)
-        .padStart(2, "0");
+        connection.initialOpacity = Math.min(
+          1,
+          connection.initialOpacity + deltaTime * 0.01
+        );
+        const opacity = Math.min(
+          1,
+          progress * connection.initialOpacity * depthAlpha * 3
+        );
+        const alpha = Math.floor(
+          Math.max(
+            0,
+            Math.min(
+              255,
+              strength * 0.7 * opacity * 255 * connection.drawProgress
+            )
+          )
+        )
+          .toString(16)
+          .padStart(2, "0");
 
-      const midX = (nodeA.x + nodeB.x) / 2;
-      const midY = (nodeA.y + nodeB.y) / 2;
-      const waveAmplitude = Math.min(15, distance * 0.1) * depthAlpha;
-      const waveOffset = Math.sin(timestamp * WAVE_FREQUENCY + nodeA.oscillationOffset) * waveAmplitude;
-      const perpX = -dy / distance;
-      const perpY = dx / distance;
-      const controlX = midX + perpX * waveOffset;
-      const controlY = midY + perpY * waveOffset;
+        const midX = (nodeA.x + nodeB.x) / 2;
+        const midY = (nodeA.y + nodeB.y) / 2;
+        const waveAmplitude = Math.min(15, distance * 0.1) * depthAlpha;
+        const waveOffset =
+          Math.sin(timestamp * WAVE_FREQUENCY + nodeA.oscillationOffset) *
+          waveAmplitude;
+        const perpX = -dy / distance;
+        const perpY = dx / distance;
+        const controlX = midX + perpX * waveOffset;
+        const controlY = midY + perpY * waveOffset;
 
-      ctx.save();
-      ctx.lineCap = 'round';
-      ctx.lineWidth = Math.max(0.5, width * depthAlpha);
+        ctx.save();
+        ctx.lineCap = "round";
+        ctx.lineWidth = Math.max(0.5, width * depthAlpha);
 
-      const gradient = ctx.createLinearGradient(nodeA.x, nodeA.y, nodeB.x, nodeB.y);
-      gradient.addColorStop(0, `${nodeA.color}${alpha}`);
-      gradient.addColorStop(0.5, `${nodeA.color}${alpha}`);
-      gradient.addColorStop(1, `${nodeB.color}${alpha}`);
+        const gradient = ctx.createLinearGradient(
+          nodeA.x,
+          nodeA.y,
+          nodeB.x,
+          nodeB.y
+        );
+        gradient.addColorStop(0, `${nodeA.color}${alpha}`);
+        gradient.addColorStop(0.5, `${nodeA.color}${alpha}`);
+        gradient.addColorStop(1, `${nodeB.color}${alpha}`);
 
-      ctx.strokeStyle = gradient;
-      ctx.beginPath();
-      ctx.moveTo(nodeA.x, nodeA.y);
-      ctx.quadraticCurveTo(controlX, controlY, nodeB.x, nodeB.y);
-      ctx.stroke();
-      ctx.restore();
-
-      // Pulse animation
-      if (connection.drawProgress > 0.3 && connection.pulses.length === 0 && Math.random() < PULSE_SPAWN_CHANCE) {
-        connection.pulses.push({
-          position: 0,
-          opacity: 1
-        });
-      }
-
-      connection.pulses = connection.pulses.filter(pulse => {
-        const t = Math.max(0, Math.min(1, pulse.position));
-        const pulseX = Math.pow(1 - t, 2) * nodeA.x + 2 * (1 - t) * t * controlX + Math.pow(t, 2) * nodeB.x;
-        const pulseY = Math.pow(1 - t, 2) * nodeA.y + 2 * (1 - t) * t * controlY + Math.pow(t, 2) * nodeB.y;
-        const pulseSize = Math.max(PULSE_SIZE_MIN, (PULSE_SIZE_MIN + Math.sin(pulse.position * Math.PI) * (PULSE_SIZE_MAX - PULSE_SIZE_MIN)) * depthAlpha);
-
-        const pulseGradient = ctx.createRadialGradient(pulseX, pulseY, 0, pulseX, pulseY, pulseSize);
-        const pulseOpacity = Math.max(0, Math.min(1, pulse.opacity * Math.sin(pulse.position * Math.PI) * opacity * 2));
-
-        pulseGradient.addColorStop(0, `${nodeA.color}${Math.floor(255 * pulseOpacity).toString(16).padStart(2, "0")}`);
-        pulseGradient.addColorStop(0.5, `${nodeA.color}${Math.floor(150 * pulseOpacity).toString(16).padStart(2, "0")}`);
-        pulseGradient.addColorStop(1, "transparent");
-
+        ctx.strokeStyle = gradient;
         ctx.beginPath();
-        ctx.fillStyle = pulseGradient;
-        ctx.arc(pulseX, pulseY, pulseSize, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.moveTo(nodeA.x, nodeA.y);
+        ctx.quadraticCurveTo(controlX, controlY, nodeB.x, nodeB.y);
+        ctx.stroke();
+        ctx.restore();
 
-        pulse.position += PULSE_SPEED * deltaTime;
-        pulse.opacity = Math.max(0, pulse.opacity - PULSE_FADE_SPEED * deltaTime);
+        // Pulse animation
+        if (
+          connection.drawProgress > 0.3 &&
+          connection.pulses.length === 0 &&
+          Math.random() < PULSE_SPAWN_CHANCE
+        ) {
+          connection.pulses.push({
+            position: 0,
+            opacity: 1,
+          });
+        }
 
-        return pulse.position < 1 && pulse.opacity > 0;
+        connection.pulses = connection.pulses.filter((pulse) => {
+          const t = Math.max(0, Math.min(1, pulse.position));
+          const pulseX =
+            Math.pow(1 - t, 2) * nodeA.x +
+            2 * (1 - t) * t * controlX +
+            Math.pow(t, 2) * nodeB.x;
+          const pulseY =
+            Math.pow(1 - t, 2) * nodeA.y +
+            2 * (1 - t) * t * controlY +
+            Math.pow(t, 2) * nodeB.y;
+          const pulseSize = Math.max(
+            PULSE_SIZE_MIN,
+            (PULSE_SIZE_MIN +
+              Math.sin(pulse.position * Math.PI) *
+                (PULSE_SIZE_MAX - PULSE_SIZE_MIN)) *
+              depthAlpha
+          );
+
+          const pulseGradient = ctx.createRadialGradient(
+            pulseX,
+            pulseY,
+            0,
+            pulseX,
+            pulseY,
+            pulseSize
+          );
+          const pulseOpacity = Math.max(
+            0,
+            Math.min(
+              1,
+              pulse.opacity * Math.sin(pulse.position * Math.PI) * opacity * 2
+            )
+          );
+
+          pulseGradient.addColorStop(
+            0,
+            `${nodeA.color}${Math.floor(255 * pulseOpacity)
+              .toString(16)
+              .padStart(2, "0")}`
+          );
+          pulseGradient.addColorStop(
+            0.5,
+            `${nodeA.color}${Math.floor(150 * pulseOpacity)
+              .toString(16)
+              .padStart(2, "0")}`
+          );
+          pulseGradient.addColorStop(1, "transparent");
+
+          ctx.beginPath();
+          ctx.fillStyle = pulseGradient;
+          ctx.arc(pulseX, pulseY, pulseSize, 0, Math.PI * 2);
+          ctx.fill();
+
+          pulse.position += PULSE_SPEED * deltaTime;
+          pulse.opacity = Math.max(
+            0,
+            pulse.opacity - PULSE_FADE_SPEED * deltaTime
+          );
+
+          return pulse.position < 1 && pulse.opacity > 0;
+        });
       });
-    });
-  }, []);
+    },
+    []
+  );
 
-  const updateNodes = useCallback((
-    deltaTime: number,
-    width: number,
-    height: number,
-    progress: number,
-    timestamp: number
-  ) => {
-    const nodes = nodesRef.current;
+  const updateNodes = useCallback(
+    (
+      deltaTime: number,
+      width: number,
+      height: number,
+      progress: number,
+      timestamp: number
+    ) => {
+      const nodes = nodesRef.current;
 
-    nodes.forEach((node) => {
-      const timeOffset = timestamp * NODE_MOVEMENT_FREQUENCY + node.movementOffset;
-      
-      const dx = Math.sin(timeOffset) * Math.cos(timeOffset * 0.7) * BASE_MOVEMENT_RANGE +
-                 Math.sin(timeOffset * 0.4) * MOVEMENT_VARIATION;
-      
-      const dy = Math.cos(timeOffset * 0.8) * Math.sin(timeOffset * 0.5) * BASE_MOVEMENT_RANGE +
-                 Math.cos(timeOffset * 0.6) * MOVEMENT_VARIATION;
-      
-      const dz = Math.sin(timeOffset * 0.3) * 0.4;
+      nodes.forEach((node) => {
+        const timeOffset =
+          timestamp * NODE_MOVEMENT_FREQUENCY + node.movementOffset;
 
-      const distanceX = node.originalX - node.x;
-      const distanceY = node.originalY - node.y;
-      const returnForceX = distanceX * RETURN_FORCE * (1 + Math.abs(distanceX) / MAX_OFFSET);
-      const returnForceY = distanceY * RETURN_FORCE * (1 + Math.abs(distanceY) / MAX_OFFSET);
+        const dx =
+          Math.sin(timeOffset) *
+            Math.cos(timeOffset * 0.7) *
+            BASE_MOVEMENT_RANGE +
+          Math.sin(timeOffset * 0.4) * MOVEMENT_VARIATION;
 
-      node.vx += (dx * deltaTime * 0.01) + returnForceX;
-      node.vy += (dy * deltaTime * 0.01) + returnForceY;
-      node.vz += dz * deltaTime * 0.01;
+        const dy =
+          Math.cos(timeOffset * 0.8) *
+            Math.sin(timeOffset * 0.5) *
+            BASE_MOVEMENT_RANGE +
+          Math.cos(timeOffset * 0.6) * MOVEMENT_VARIATION;
 
-      if (progress < 1) {
-        node.initialScale = Math.min(1, node.initialScale + deltaTime * 0.01);
+        const dz = Math.sin(timeOffset * 0.3) * 0.4;
+
+        const distanceX = node.originalX - node.x;
+        const distanceY = node.originalY - node.y;
+        const returnForceX =
+          distanceX * RETURN_FORCE * (1 + Math.abs(distanceX) / MAX_OFFSET);
+        const returnForceY =
+          distanceY * RETURN_FORCE * (1 + Math.abs(distanceY) / MAX_OFFSET);
+
+        node.vx += dx * deltaTime * 0.01 + returnForceX;
+        node.vy += dy * deltaTime * 0.01 + returnForceY;
+        node.vz += dz * deltaTime * 0.01;
+
+        if (progress < 1) {
+          node.initialScale = Math.min(1, node.initialScale + deltaTime * 0.01);
+        }
+
+        node.x += node.vx * deltaTime;
+        node.y += node.vy * deltaTime;
+        node.z += node.vz * deltaTime;
+
+        const glowWave =
+          Math.sin(timestamp * GLOW_WAVE_FREQUENCY + node.glowWaveOffset) * 0.5;
+        node.glowIntensity =
+          MIN_GLOW + (MAX_GLOW - MIN_GLOW) * (0.5 + glowWave * 0.5);
+
+        node.vx *= Math.pow(VELOCITY_DAMPENING, deltaTime);
+        node.vy *= Math.pow(VELOCITY_DAMPENING, deltaTime);
+        node.vz *= Math.pow(VELOCITY_DAMPENING, deltaTime);
+
+        node.x = Math.max(
+          node.originalX - MAX_OFFSET,
+          Math.min(node.originalX + MAX_OFFSET, node.x)
+        );
+        node.y = Math.max(
+          node.originalY - MAX_OFFSET,
+          Math.min(node.originalY + MAX_OFFSET, node.y)
+        );
+        node.z = Math.max(-Z_RANGE / 6, Math.min(Z_RANGE / 6, node.z));
+      });
+    },
+    []
+  );
+
+  const animate = useCallback(
+    (timestamp: number) => {
+      const canvas = canvasRef.current;
+      const ctx = ctxRef.current;
+      if (!canvas || !ctx) return;
+
+      if (startTimeRef.current === 0) {
+        startTimeRef.current = timestamp;
       }
 
-      node.x += node.vx * deltaTime;
-      node.y += node.vy * deltaTime;
-      node.z += node.vz * deltaTime;
+      const deltaTime = Math.min(32, timestamp - lastTimeRef.current) / 16.67;
+      lastTimeRef.current = timestamp;
+      frameCountRef.current++;
 
-      const glowWave = Math.sin(timestamp * GLOW_WAVE_FREQUENCY + node.glowWaveOffset) * 0.5;
-      node.glowIntensity = MIN_GLOW + (MAX_GLOW - MIN_GLOW) * (0.5 + glowWave * 0.5);
+      const progress = Math.min(
+        1,
+        (timestamp - startTimeRef.current) / INITIAL_ANIMATION_DURATION
+      );
 
-      node.vx *= Math.pow(VELOCITY_DAMPENING, deltaTime);
-      node.vy *= Math.pow(VELOCITY_DAMPENING, deltaTime);
-      node.vz *= Math.pow(VELOCITY_DAMPENING, deltaTime);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      node.x = Math.max(node.originalX - MAX_OFFSET, Math.min(node.originalX + MAX_OFFSET, node.x));
-      node.y = Math.max(node.originalY - MAX_OFFSET, Math.min(node.originalY + MAX_OFFSET, node.y));
-      node.z = Math.max(-Z_RANGE / 6, Math.min(Z_RANGE / 6, node.z));
-    });
-  }, []);
+      updateNodes(deltaTime, canvas.width, canvas.height, progress, timestamp);
 
-  const animate = useCallback((timestamp: number) => {
-    const canvas = canvasRef.current;
-    const ctx = ctxRef.current;
-    if (!canvas || !ctx) return;
+      if (frameCountRef.current % CONNECTION_UPDATE_INTERVAL === 0) {
+        updateConnections();
+      }
 
-    if (startTimeRef.current === 0) {
-      startTimeRef.current = timestamp;
-    }
+      drawConnections(ctx, deltaTime, timestamp, progress);
+      nodesRef.current.forEach((node) =>
+        drawNode(ctx, node, timestamp, progress)
+      );
 
-    const deltaTime = Math.min(32, timestamp - lastTimeRef.current) / 16.67;
-    lastTimeRef.current = timestamp;
-    frameCountRef.current++;
-
-    const progress = Math.min(1, (timestamp - startTimeRef.current) / INITIAL_ANIMATION_DURATION);
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    updateNodes(deltaTime, canvas.width, canvas.height, progress, timestamp);
-
-    if (frameCountRef.current % CONNECTION_UPDATE_INTERVAL === 0) {
-      updateConnections();
-    }
-
-    drawConnections(ctx, deltaTime, timestamp, progress);
-    nodesRef.current.forEach((node) => drawNode(ctx, node, timestamp, progress));
-
-    animationFrameRef.current = requestAnimationFrame(animate);
-  }, [updateNodes, updateConnections, drawConnections, drawNode]);
+      animationFrameRef.current = requestAnimationFrame(animate);
+    },
+    [updateNodes, updateConnections, drawConnections, drawNode]
+  );
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -407,14 +565,29 @@ export const NeuralBackground = () => {
   }, [animate, initNodes]);
 
   return (
-    <canvas
-      ref={canvasRef}
-      className="fixed inset-0 w-full h-full bg-neural-bg opacity-50"
-      style={{
-        WebkitBackdropFilter: "blur(8px)",
-        backdropFilter: "blur(8px)",
-        zIndex: -1
-      }}
-    />
+    <div>
+      <canvas
+        ref={canvasRef}
+        className="fixed inset-0 w-full h-full bg-neural-bg opacity-50"
+        style={{
+          WebkitBackdropFilter: "blur(8px)",
+          backdropFilter: "blur(8px)",
+          zIndex: -1,
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+        }}
+      />
+
+      <div className="absolute inset-0">
+        <motion.div style={{ y }} className="absolute inset-0">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_0%_0%,rgba(67,56,202,0.12),transparent_50%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_100%_100%,rgba(124,58,237,0.12),transparent_50%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(59,130,246,0.12),transparent_50%)]" />
+        </motion.div>
+      </div>
+    </div>
   );
 };

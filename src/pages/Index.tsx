@@ -14,29 +14,10 @@ const Index = () => {
       <Hero />
       {/* <AIPrinciplesAnimation /> */}
       {/* <HeroAnimation /> */}
-      <AnimatedLearningMethods />
+      {/* <AnimatedLearningMethods /> */}
       {/* <NetworkVisualization />   */}
       <br />
-      <br />
-      <br />
-      <br />
-      <br />
-      <br />
-      <br />
-      <br />
-      <br />
-      <br />
-      <br />
-      <br />
-      <br />
-      <br />
-      <br />
-      <br />
-      <br />
-      <br />
-      <br />
-      <br />
-      <br />
+    
       <br />
       <br />
       <br />

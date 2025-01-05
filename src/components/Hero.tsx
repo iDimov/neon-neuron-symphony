@@ -29,13 +29,13 @@ export const Hero = () => {
 
   return (
     <div ref={heroRef} className="relative min-h-screen overflow-hidden">
-      <div className="absolute inset-0">
+      {/* <div className="absolute inset-0">
         <motion.div style={{ y }} className="absolute inset-0">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_0%_0%,rgba(67,56,202,0.12),transparent_50%)]" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_100%_100%,rgba(124,58,237,0.12),transparent_50%)]" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(59,130,246,0.12),transparent_50%)]" />
         </motion.div>
-      </div>
+      </div> */}
       
       <div className="relative container mx-auto px-4 sm:px-6 lg:px-8 pt-20 lg:pt-32">
         {/* Welcome Badge */}
