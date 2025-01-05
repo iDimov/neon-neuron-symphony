@@ -43,8 +43,8 @@ export const Hero = () => {
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full 
                          bg-blue-500/10 border border-blue-500/20 backdrop-blur-sm">
             <Star className="w-4 h-4 text-blue-400" />
-            <span className="text-sm font-medium text-blue-400">
-              Crafted for Tech Industry Professionals
+            <span className="text-base font-medium bg-gradient-to-r from-blue-400 to-violet-400 bg-clip-text text-transparent">
+              Beyond Just Another Learning App
             </span>
             <Star className="w-4 h-4 text-blue-400" />
           </div>
@@ -74,8 +74,8 @@ export const Hero = () => {
           {[
             { 
               Icon: Code, 
-              title: "IT-Focused Learning",
-              text: "Specialized content for tech professionals",
+              title: "IT-Focused English Learning",
+              text: "Crafted for IT pros and students",
               gradient: "from-cyan-500 via-blue-500 to-violet-500"
             },
             {
