@@ -1,6 +1,6 @@
 import { useRef, useEffect } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
-import { Code, Brain, Sparkles, ArrowRight, Star } from 'lucide-react';
+import { Code, Brain, Sparkles, ArrowRight, Star, Layers } from 'lucide-react';
 import gsap from 'gsap';
 import ScrollTrigger from 'gsap/ScrollTrigger';
 
@@ -42,11 +42,10 @@ export const Hero = () => {
         <div className="flex justify-center mb-12">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full 
                          bg-blue-500/10 border border-blue-500/20 backdrop-blur-sm">
-            <Star className="w-4 h-4 text-blue-400" />
+            <Layers className="w-4 h-4 text-blue-400" />
             <span className="text-base font-medium bg-gradient-to-r from-blue-400 to-violet-400 bg-clip-text text-transparent">
               Beyond Just Another Learning App
             </span>
-            <Star className="w-4 h-4 text-blue-400" />
           </div>
         </div>
 

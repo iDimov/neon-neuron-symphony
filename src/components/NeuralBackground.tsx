@@ -44,7 +44,7 @@ const COLORS = [
   "#EC4899",
 ];
 
-const NODE_COUNT = 50; // Further reduced for better performance
+const NODE_COUNT = 33; // Further reduced for better performance
 const CONNECTION_DISTANCE = 250;
 const MAX_CONNECTIONS_PER_NODE = 1;
 const BASE_SPEED = 0.1;

@@ -1,369 +1,371 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Brain, BookOpen, Gauge, CircleDot } from 'lucide-react';
-import { Card } from '@/components/ui/card';
-import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Brain, BookOpen, Gauge } from 'lucide-react';
 
-gsap.registerPlugin(ScrollTrigger);
+interface Node {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  radius: number;
+  color: string;
+  id: string;
+}
 
-const MethodCard = ({ method, isActive, onClick, index }) => {
-  const cardRef = useRef(null);
-  const iconRef = useRef(null);
-  const contentRef = useRef(null);
-  const detailsRef = useRef(null);
-  const detailsWrapperRef = useRef(null);
+interface Pulse {
+  position: number;
+  opacity: number;
+  speed: number;
+}
 
-  useEffect(() => {
-    const ctx = gsap.context(() => {
-      // Enhanced scroll reveal animation for each card
-      gsap.from(cardRef.current, {
-        y: 100,
-        scale: 0.9,
-        opacity: 0,
-        duration: 1.2,
-        delay: index * 0.3,
-        ease: "power4.out",
-        scrollTrigger: {
-          trigger: cardRef.current,
-          start: "top bottom-=50",
-          end: "top center",
-          toggleActions: "play none none reverse",
-          scrub: 1,
-          markers: true // Remove this in production
-        }
-      });
+interface Connection {
+  nodeA: Node;
+  nodeB: Node;
+  pulses: Pulse[];
+}
 
-      // Continuous floating animation for icon
-      gsap.to(iconRef.current, {
-        y: -8,
-        duration: 2,
-        ease: "power1.inOut",
-        repeat: -1,
-        yoyo: true
-      });
+const COLORS = ['#3B82F6', '#8B5CF6', '#EC4899'];
+const NODE_RADIUS = 50;
+const CONNECTION_DISTANCE = 800;
+const MOVEMENT_RANGE = 10;
+const SPEED = 0.3;
 
-      // Active state animations
-      if (isActive) {
-        // Expand card with more dramatic effect
-        gsap.to(cardRef.current, {
-          scale: 1.03,
-          duration: 0.5,
-          ease: "back.out(1.7)"
-        });
+// Pulse animation constants
+const PULSE_SPEED = 0.001;
+const PULSE_SPAWN_CHANCE = 0.002;
+const PULSE_FADE_SPEED = 0.001;
+const PULSE_SIZE = 12;
+const HOVER_RADIUS = 60;
 
-        // Reveal details with slide effect
-        gsap.fromTo(detailsWrapperRef.current,
-          { 
-            clipPath: "polygon(0 0, 100% 0, 100% 0, 0 0)",
-            opacity: 0
-          },
-          { 
-            clipPath: "polygon(0 0, 100% 0, 100% 100%, 0 100%)",
-            opacity: 1,
-            duration: 0.8,
-            ease: "power3.inOut"
-          }
-        );
-
-        // Animate details items with cascade
-        gsap.from(detailsRef.current.children, {
-          y: 30,
-          opacity: 0,
-          duration: 0.6,
-          stagger: 0.15,
-          ease: "power2.out",
-          delay: 0.3
-        });
-      } else {
-        // Reset card scale with smooth transition
-        gsap.to(cardRef.current, {
-          scale: 1,
-          duration: 0.5,
-          ease: "power2.out"
-        });
-      }
-    });
-
-    return () => ctx.revert();
-  }, [isActive, index]);
-
-  return (
-    <Card 
-      ref={cardRef}
-      onClick={onClick}
-      className={`relative overflow-hidden cursor-pointer transform-gpu
-        ${isActive ? 'shadow-[0_0_50px_-12px] shadow-primary/30' : 'shadow-[0_0_30px_-12px] shadow-white/20'}
-        transition-all duration-500 rounded-3xl
-        border border-white/10
-        backdrop-blur-xl
-        ${method.bgClass}`}
-    >
-      {/* Ambient light effect */}
-      <div className={`absolute -inset-[100px] ${method.glowClass} opacity-20 blur-[100px]`} />
-      
-      {/* Glass effect background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-white/[0.07] to-white/[0.03] backdrop-blur-xl" />
-      
-      <div className="relative p-6">
-        {/* Decorative elements */}
-        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-white/[0.03] to-transparent rounded-full blur-3xl" />
-        <div className={`absolute bottom-0 left-0 w-24 h-24 ${method.gradient} opacity-10 rounded-full blur-2xl`} />
-        
-        {/* Header Section */}
-        <div className="relative z-10 flex items-center gap-4 mb-4">
-          <div ref={iconRef} 
-               className={`flex-shrink-0 p-3 rounded-2xl ${method.gradient} bg-opacity-20
-                          shadow-lg shadow-primary/10 backdrop-blur-xl
-                          border border-white/10`}>
-            <method.icon className="w-6 h-6 text-white" />
-          </div>
-          <div className="min-w-0">
-            <h3 className="text-xl font-bold bg-clip-text text-transparent 
-                         bg-gradient-to-br from-white via-white to-white/70 truncate">
-              {method.title}
-            </h3>
-            <p className="text-sm text-white/50 font-medium truncate">
-              {method.subtitle}
-            </p>
-          </div>
-        </div>
-
-        {/* Description */}
-        <p className="text-white/70 text-sm leading-relaxed mb-4 relative z-10">
-          {method.description}
-        </p>
-        
-        {/* Details Grid - Always visible but expands */}
-        <div ref={contentRef} 
-             className="relative z-10 transition-all duration-500">
-          <div ref={detailsWrapperRef}
-               className="space-y-3 transition-all duration-500">
-            <div ref={detailsRef}
-                 className={`grid gap-3 transition-all duration-500
-                           ${isActive ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
-              {method.details.map((detail, idx) => (
-                <div key={idx} 
-                     className={`overflow-hidden transition-all duration-500
-                                ${isActive ? 'opacity-100' : 'opacity-60'}`}>
-                  <div className="flex items-start gap-3 p-2 rounded-xl
-                                hover:bg-white/5 transition-colors">
-                    <div className={`flex-shrink-0 w-2 h-2 mt-2 rounded-full
-                                  ${method.gradient} bg-opacity-20 backdrop-blur-sm
-                                  border border-white/10`} />
-                    <div>
-                      <h4 className="font-medium text-white/90 text-sm">
-                        {detail.title}
-                      </h4>
-                      <p className={`text-xs text-white/50 leading-relaxed mt-1
-                                   transition-all duration-500
-                                   ${isActive ? 'block' : 'hidden'}`}>
-                        {detail.description}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </Card>
-  );
-};
+const NODES_INFO = [
+  {
+    id: 'language',
+    label: 'Language Acquisition',
+    description: 'Natural approach to mastering technical English',
+    color: '#3B82F6',
+    details: [
+      'Immersive learning in IT context',
+      'Real-world vocabulary acquisition',
+      'Natural grammar understanding'
+    ]
+  },
+  {
+    id: 'brain',
+    label: 'Build a Second Brain',
+    description: 'Systematic approach to knowledge management',
+    color: '#8B5CF6',
+    details: [
+      'Organized note-taking system',
+      'Efficient information retrieval',
+      'Connected learning patterns'
+    ]
+  },
+  {
+    id: 'habits',
+    label: 'Developing Habits',
+    description: 'Creating sustainable learning routines',
+    color: '#EC4899',
+    details: [
+      'Consistent practice schedule',
+      'Progress tracking system',
+      'Adaptive learning paths'
+    ]
+  }
+];
 
 const AnimatedLearningMethods = () => {
-  const [activeMethod, setActiveMethod] = useState(null);
-  const sectionRef = useRef(null);
-  const titleRef = useRef(null);
-  const cardsRef = useRef(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const nodesRef = useRef<Node[]>([]);
+  const connectionsRef = useRef<Connection[]>([]);
+  const animationFrameRef = useRef<number>();
+  const lastTimeRef = useRef<number>(0);
+  const [hoveredNode, setHoveredNode] = useState<string | null>(null);
+  const [selectedNode, setSelectedNode] = useState<string | null>(null);
 
-  const methods = [
-    {
-      id: 'language',
-      title: 'Language Acquisition',
-      subtitle: 'Natural Learning Process',
-      icon: Brain,
-      gradient: 'bg-gradient-to-br from-blue-500 to-cyan-500',
-      glowClass: 'bg-blue-500/20',
-      bgClass: 'bg-[radial-gradient(ellipse_at_top,rgba(59,130,246,0.15),transparent_70%)]',
-      description: 'Master technical English through natural comprehension and practical usage in IT contexts.',
-      details: [
-        {
-          title: 'Immersive Learning',
-          description: 'Learn through real-world IT scenarios and practical examples.'
-        },
-        {
-          title: 'Contextual Understanding',
-          description: 'Grasp concepts naturally through relevant technical contexts.'
-        },
-        {
-          title: 'Active Practice',
-          description: 'Apply knowledge in interactive coding and documentation exercises.'
-        },
-        {
-          title: 'Progressive Complexity',
-          description: 'Advance from basic concepts to complex technical discussions.'
-        }
-      ]
-    },
-    {
-      id: 'brain',
-      title: 'Second Brain System',
-      subtitle: 'Knowledge Organization',
-      icon: BookOpen,
-      gradient: 'bg-gradient-to-br from-violet-500 to-purple-500',
-      glowClass: 'bg-violet-500/20',
-      bgClass: 'bg-[radial-gradient(ellipse_at_center,rgba(139,92,246,0.15),transparent_70%)]',
-      description: 'Build a powerful system to capture, organize, and utilize technical knowledge effectively.',
-      details: [
-        {
-          title: 'Smart Capture',
-          description: 'Save and categorize valuable technical information efficiently.'
-        },
-        {
-          title: 'Structured Organization',
-          description: 'Create meaningful connections between different concepts.'
-        },
-        {
-          title: 'Quick Retrieval',
-          description: 'Access your knowledge base instantly when needed.'
-        },
-        {
-          title: 'Active Application',
-          description: 'Transform stored knowledge into practical skills.'
-        }
-      ]
-    },
-    {
-      id: 'habits',
-      title: 'Habit Engineering',
-      subtitle: 'Consistent Growth',
-      icon: Gauge,
-      gradient: 'bg-gradient-to-br from-pink-500 to-rose-500',
-      glowClass: 'bg-pink-500/20',
-      bgClass: 'bg-[radial-gradient(ellipse_at_bottom,rgba(236,72,153,0.15),transparent_70%)]',
-      description: 'Develop sustainable learning habits through proven psychological principles.',
-      details: [
-        {
-          title: 'Micro Progress',
-          description: 'Break down learning into small, manageable steps.'
-        },
-        {
-          title: 'Routine Integration',
-          description: 'Blend learning seamlessly into your daily workflow.'
-        },
-        {
-          title: 'Progress Tracking',
-          description: 'Monitor your growth with clear metrics and milestones.'
-        },
-        {
-          title: 'Continuous Improvement',
-          description: 'Refine your learning process based on performance data.'
-        }
-      ]
-    }
-  ];
+  const initNodes = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-  useEffect(() => {
-    const ctx = gsap.context(() => {
-      // Enhanced section entrance animation
-      gsap.from(sectionRef.current, {
-        opacity: 0,
-        duration: 1.5,
-        ease: "power2.out",
-        scrollTrigger: {
-          trigger: sectionRef.current,
-          start: "top bottom",
-          end: "top center",
-          scrub: 1,
-          markers: true // Remove this in production
+    const centerY = window.innerHeight * 0.4;
+    const spacing = window.innerWidth / 4;
+
+    nodesRef.current = NODES_INFO.map((info, i) => ({
+      x: spacing * (i + 1),
+      y: centerY,
+      vx: (Math.random() - 0.5) * SPEED,
+      vy: (Math.random() - 0.5) * SPEED,
+      radius: NODE_RADIUS,
+      color: info.color,
+      id: info.id
+    }));
+
+    // Initialize connections
+    connectionsRef.current = [];
+    nodesRef.current.forEach((nodeA, i) => {
+      nodesRef.current.forEach((nodeB, j) => {
+        if (i < j) {
+          connectionsRef.current.push({
+            nodeA,
+            nodeB,
+            pulses: []
+          });
         }
       });
+    });
+  }, []);
 
-      // Enhanced title animation sequence
-      gsap.from(titleRef.current.children, {
-        y: 100,
-        opacity: 0,
-        duration: 1.2,
-        stagger: 0.2,
-        ease: "power3.out",
-        scrollTrigger: {
-          trigger: titleRef.current,
-          start: "top bottom-=100",
-          end: "top center",
-          scrub: 1,
-          markers: true // Remove this in production
-        }
-      });
+  const drawConnections = useCallback((ctx: CanvasRenderingContext2D, deltaTime: number) => {
+    // Draw connections first (under nodes)
+    connectionsRef.current.forEach(connection => {
+      const { nodeA, nodeB } = connection;
+      const dx = nodeB.x - nodeA.x;
+      const dy = nodeB.y - nodeA.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      // Base connection line
+      const alpha = Math.min(1, 0.5 - (distance / CONNECTION_DISTANCE));
+      
+      ctx.beginPath();
+      ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.4})`;
+      ctx.lineWidth = .5;
+      ctx.moveTo(nodeA.x, nodeA.y);
+      ctx.lineTo(nodeB.x, nodeB.y);
+      ctx.stroke();
 
-      // Create timeline for cards animation
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: cardsRef.current,
-          start: "top bottom-=100",
-          end: "center center",
-          scrub: 1,
-          markers: true // Remove this in production
-        }
-      });
+      // Glowing effect
+      ctx.beginPath();
+      ctx.strokeStyle = `${nodeA.color}70`;
+      ctx.lineWidth = 3;
+      ctx.shadowBlur = 30;
+      ctx.shadowColor = nodeA.color;
+      ctx.moveTo(nodeA.x, nodeA.y);
+      ctx.lineTo(nodeB.x, nodeB.y);
+      ctx.stroke();
 
-      // Animate cards with stagger
-      tl.from(".method-card", {
-        y: 100,
-        opacity: 0,
-        scale: 0.8,
-        duration: 1,
-        stagger: 0.3,
-        ease: "power3.out"
+      // Handle pulse spawning
+      if (Math.random() < PULSE_SPAWN_CHANCE && connection.pulses.length < 3) {
+        connection.pulses.push({
+          position: 0,
+          opacity: 1,
+          speed: PULSE_SPEED * (0.8 + Math.random() * 0.4)
+        });
+      }
+
+      // Update and draw pulses
+      connection.pulses = connection.pulses.filter(pulse => {
+        const x = nodeA.x + dx * pulse.position;
+        const y = nodeA.y + dy * pulse.position;
+
+        // Draw pulse
+        const gradient = ctx.createRadialGradient(x, y, 0, x, y, PULSE_SIZE);
+        gradient.addColorStop(0, `${nodeA.color}${Math.floor(pulse.opacity * 255).toString(16).padStart(2, '0')}`);
+        gradient.addColorStop(1, 'transparent');
+
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(x, y, PULSE_SIZE, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Update pulse
+        pulse.position += pulse.speed * deltaTime;
+        pulse.opacity = Math.max(0, pulse.opacity - PULSE_FADE_SPEED * deltaTime);
+
+        return pulse.position < 1 && pulse.opacity > 0;
       });
     });
 
-    return () => ctx.revert();
+    // Draw node glows
+    nodesRef.current.forEach(node => {
+      const isHovered = node.id === hoveredNode;
+      
+      // Glow effect
+      const gradient = ctx.createRadialGradient(
+        node.x,
+        node.y,
+        0,
+        node.x,
+        node.y,
+        node.radius * (isHovered ? 1.8 : 1.5)
+      );
+      gradient.addColorStop(0, `${node.color}${isHovered ? 'B0' : '90'}`);
+      gradient.addColorStop(0.5, `${node.color}${isHovered ? '80' : '60'}`);
+      gradient.addColorStop(1, 'transparent');
+
+      ctx.fillStyle = gradient;
+      ctx.shadowBlur = isHovered ? 50 : 40;
+      ctx.shadowColor = node.color;
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, node.radius * (isHovered ? 1.2 : 1), 0, Math.PI * 2);
+      ctx.fill();
+    });
+  }, [hoveredNode]);
+
+  const updateNodes = useCallback(() => {
+    nodesRef.current.forEach(node => {
+      node.x += node.vx;
+      node.y += node.vy;
+
+      const startX = node.x - MOVEMENT_RANGE;
+      const startY = node.y - MOVEMENT_RANGE;
+
+      // Bounce within movement range
+      if (Math.abs(node.x - startX) > MOVEMENT_RANGE * 2) {
+        node.vx *= -1;
+      }
+      if (Math.abs(node.y - startY) > MOVEMENT_RANGE * 2) {
+        node.vy *= -1;
+      }
+    });
   }, []);
 
-  const handleMethodClick = (methodId) => {
-    setActiveMethod(methodId === activeMethod ? null : methodId);
-  };
+  const animate = useCallback((timestamp: number) => {
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext('2d');
+    if (!canvas || !ctx) return;
+
+    const deltaTime = timestamp - lastTimeRef.current;
+    lastTimeRef.current = timestamp;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    updateNodes();
+    drawConnections(ctx, deltaTime);
+
+    animationFrameRef.current = requestAnimationFrame(animate);
+  }, [drawConnections, updateNodes]);
+
+  const handleMouseMove = useCallback((event: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+
+    // Find hovered node
+    const hoveredNodeObj = nodesRef.current.find(node => {
+      const dx = x - node.x;
+      const dy = y - node.y;
+      return Math.sqrt(dx * dx + dy * dy) < HOVER_RADIUS;
+    });
+
+    setHoveredNode(hoveredNodeObj?.id || null);
+  }, []);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const handleResize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      initNodes();
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    animationFrameRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [animate, initNodes]);
 
   return (
-    <section ref={sectionRef} className="relative py-32 overflow-hidden">
-      {/* Enhanced Background Effects */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(59,130,246,0.15),transparent_50%)]" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,rgba(139,92,246,0.15),transparent_50%)]" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,rgba(236,72,153,0.15),transparent_50%)]" />
-      
-      {/* Decorative Elements */}
-      <div className="absolute top-1/4 left-0 w-72 h-72 bg-blue-500/30 rounded-full blur-[100px]" />
-      <div className="absolute bottom-1/4 right-0 w-72 h-72 bg-violet-500/30 rounded-full blur-[100px]" />
-      
-      <div className="relative container mx-auto px-4 sm:px-6 lg:px-8">
-        <div ref={titleRef} className="text-center space-y-8 mb-24">
-          <h2 className="text-6xl sm:text-7xl lg:text-8xl font-bold
-                       bg-clip-text text-transparent bg-gradient-to-br 
-                       from-blue-400 via-violet-400 to-purple-400
-                       leading-tight">
-            Learning Methods
-          </h2>
-          <p className="text-xl text-white/60 max-w-3xl mx-auto font-medium leading-relaxed">
-            Discover our three-pillar approach to accelerate your technical English mastery
-          </p>
-        </div>
+    <section className="relative min-h-screen">
+      <canvas
+        ref={canvasRef}
+        className="fixed inset-0 w-full h-full"
+        style={{ zIndex: 0 }}
+        onMouseMove={handleMouseMove}
+      />
+      <div className="absolute inset-0 pointer-events-none">
+        {NODES_INFO.map((info) => {
+          const node = nodesRef.current.find(n => n.id === info.id);
+          if (!node) return null;
 
-        <div ref={cardsRef} 
-             className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12
-                        [perspective:1000px]">
-          {methods.map((method, index) => (
-            <div key={method.id} 
-                 className="method-card transform-gpu">
-              <MethodCard
-                method={method}
-                isActive={activeMethod === method.id}
-                onClick={() => handleMethodClick(method.id)}
-                index={index}
-              />
+          return (
+            <div
+              key={info.id}
+              className="absolute pointer-events-auto"
+              style={{
+                left: node.x,
+                top: node.y,
+                transform: 'translate(-50%, -50%)'
+              }}
+            >
+              <button
+                className={`group relative rounded-full transition-all duration-300 ${
+                  hoveredNode === info.id ? 'scale-110' : 'scale-100'
+                }`}
+                onClick={() => setSelectedNode(selectedNode === info.id ? null : info.id)}
+                onMouseEnter={() => setHoveredNode(info.id)}
+                onMouseLeave={() => setHoveredNode(null)}
+              >
+                <div 
+                  className="w-24 h-24 rounded-full"
+                  style={{
+                    background: `radial-gradient(circle at center, ${info.color}40, ${info.color}20, transparent)`,
+                    boxShadow: `0 0 60px ${info.color}40`
+                  }}
+                />
+                
+                {/* Info Card */}
+                <div
+                  className={`absolute left-full ml-6 top-1/2 -translate-y-1/2 bg-black/40 backdrop-blur-xl rounded-xl p-4 transition-all duration-300 ${
+                    selectedNode === info.id ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4 pointer-events-none'
+                  }`}
+                  style={{
+                    width: '280px',
+                    borderLeft: `3px solid ${info.color}`
+                  }}
+                >
+                  <h3 
+                    className="text-xl font-medium mb-2"
+                    style={{ color: info.color }}
+                  >
+                    {info.label}
+                  </h3>
+                  <p className="text-white/80 text-sm mb-4">
+                    {info.description}
+                  </p>
+                  <ul className="space-y-2">
+                    {info.details.map((detail, index) => (
+                      <li 
+                        key={index}
+                        className="flex items-start gap-2 text-sm text-white/70"
+                      >
+                        <span 
+                          className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0"
+                          style={{ background: info.color }}
+                        />
+                        {detail}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Hover Label */}
+                <div
+                  className={`absolute left-full ml-6 top-1/2 -translate-y-1/2 px-4 py-2 rounded-lg transition-all duration-300 whitespace-nowrap ${
+                    hoveredNode === info.id && selectedNode !== info.id
+                      ? 'opacity-100 translate-x-0'
+                      : 'opacity-0 -translate-x-4 pointer-events-none'
+                  }`}
+                  style={{
+                    background: `${info.color}20`,
+                    boxShadow: `0 0 20px ${info.color}20`,
+                    backdropFilter: 'blur(8px)'
+                  }}
+                >
+                  <span className="text-white font-medium">{info.label}</span>
+                </div>
+              </button>
             </div>
-          ))}
-        </div>
+          );
+        })}
       </div>
     </section>
   );
