@@ -115,27 +115,6 @@ export const Hero = () => {
             </motion.div>
           ))}
         </div>
-
-
-        {/* CTA */}
-        <div className="text-center">
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="relative inline-flex items-center gap-3 px-8 py-3.5 rounded-lg
-                     bg-gradient-to-r from-blue-600 to-violet-600
-                     text-white font-medium text-lg
-                     shadow-[0_0_20px_rgba(59,130,246,0.5)]
-                     transition-shadow duration-300
-                     hover:shadow-[0_0_25px_rgba(124,58,237,0.5)]"
-          >
-            <span className="relative z-10 flex items-center gap-3">
-              Discover Platform Features
-              <div className="w-px h-4 bg-white/20" />
-              <Sparkles className="w-5 h-5" />
-            </span>
-          </motion.button>
-        </div>
       </div>
     </div>
   );

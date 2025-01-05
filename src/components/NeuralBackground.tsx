@@ -52,7 +52,7 @@ const COLORS = [
   "#EC4899", // Pink-500
 ];
 
-const NODE_COUNT = 55;
+const NODE_COUNT = 33;
 const CONNECTION_DISTANCE = 350;
 const MAX_CONNECTIONS_PER_NODE = 1;
 const BASE_SPEED = 0.15;
@@ -127,14 +127,14 @@ export const NeuralBackground = () => {
         baseRadius,
         color: COLORS[Math.floor(Math.random() * COLORS.length)],
         glowIntensity: Math.random() * (MAX_GLOW - MIN_GLOW) + MIN_GLOW,
-        glowDirection: Math.random() > 0.5 ? 1 : -1,
+        glowDirection: Math.random() > 0.5 ? 1 : -1 as 1 | -1,
         connections: 0,
         oscillationOffset: Math.random() * Math.PI * 2,
         oscillationSpeed:
           OSCILLATION_SPEED_RANGE[0] +
           Math.random() *
             (OSCILLATION_SPEED_RANGE[1] - OSCILLATION_SPEED_RANGE[0]),
-        initialScale: 0, // Start at 0 for fade-in animation
+        initialScale: 0,
         movementOffset: Math.random() * Math.PI * 2,
         glowWaveOffset: Math.random() * Math.PI * 2,
       };
@@ -691,6 +691,7 @@ export const NeuralBackground = () => {
       style={{
         WebkitBackdropFilter: "blur(8px)",
         backdropFilter: "blur(8px)",
+        zIndex: -1
       }}
     />
   );
