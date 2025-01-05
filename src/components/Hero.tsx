@@ -39,30 +39,25 @@ export const Hero = () => {
       
       <div className="relative container mx-auto px-4 sm:px-6 lg:px-8 pt-20 lg:pt-32">
         {/* Welcome Badge */}
-        <motion.div 
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.6 }}
-          className="flex justify-center mb-12"
-        >
+        <div className="flex justify-center mb-12">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full 
                          bg-blue-500/10 border border-blue-500/20 backdrop-blur-sm">
             <Star className="w-4 h-4 text-blue-400" />
-            <span className="text-sm font-medium text-blue-400 hero-text">
-              Make learning IT English Fun Again!
+            <span className="text-sm font-medium text-blue-400">
+              Crafted for Tech Industry Professionals
             </span>
             <Star className="w-4 h-4 text-blue-400" />
           </div>
-        </motion.div>
+        </div>
 
         {/* Hero Text */}
         <div className="text-center max-w-4xl mx-auto mb-16 lg:mb-24">
-          <h1 className="text-4xl sm:text-6xl lg:text-8xl font-bold leading-none tracking-tight mb-8">
-            <span className="hero-text block bg-gradient-to-r from-cyan-300 via-blue-500 to-violet-500 
+          <h1 className="hero-text text-4xl sm:text-6xl lg:text-8xl font-bold leading-none tracking-tight mb-8">
+            <span className="block bg-gradient-to-r from-cyan-300 via-blue-500 to-violet-500 
                            bg-clip-text text-transparent pb-2">
               English for IT People,
             </span>
-            <span className="hero-text block bg-gradient-to-r from-violet-400 via-purple-500 to-pink-500 
+            <span className="block bg-gradient-to-r from-violet-400 via-purple-500 to-pink-500 
                            bg-clip-text text-transparent">
               Finally!
             </span>
@@ -125,15 +120,20 @@ export const Hero = () => {
         {/* CTA */}
         <div className="text-center">
           <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="group inline-flex items-center gap-2 px-6 py-3 rounded-xl
-                     bg-gradient-to-r from-blue-500 to-violet-500 
-                     text-white font-medium shadow-lg shadow-blue-500/25
-                     hover:shadow-blue-500/50 transition-all"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="relative inline-flex items-center gap-3 px-8 py-3.5 rounded-lg
+                     bg-gradient-to-r from-blue-600 to-violet-600
+                     text-white font-medium text-lg
+                     shadow-[0_0_20px_rgba(59,130,246,0.5)]
+                     transition-shadow duration-300
+                     hover:shadow-[0_0_25px_rgba(124,58,237,0.5)]"
           >
-            Start Your Journey
-            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            <span className="relative z-10 flex items-center gap-3">
+              Discover Platform Features
+              <div className="w-px h-4 bg-white/20" />
+              <Sparkles className="w-5 h-5" />
+            </span>
           </motion.button>
         </div>
       </div>
