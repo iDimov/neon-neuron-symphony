@@ -45,11 +45,11 @@ interface MousePosition {
 }
 
 const COLORS = [
-  "#0EA5E9", // Electric Blue
-  "#6366F1", // Indigo
-  "#8B5CF6", // Purple
-  "#A855F7", // Bright Purple
-  "#2DD4BF", // Teal
+  "#67E8F9", // Cyan-300 (from)
+  "#3B82F6", // Blue-500 (via)
+  "#8B5CF6", // Violet-500 (to)
+  "#A855F7", // Purple-500
+  "#EC4899", // Pink-500
 ];
 
 const NODE_COUNT = 55;
@@ -57,8 +57,8 @@ const CONNECTION_DISTANCE = 350;
 const MAX_CONNECTIONS_PER_NODE = 1;
 const BASE_SPEED = 0.15;
 const GLOW_SPEED = 0.002; // Even slower for smoother transitions
-const MAX_GLOW = 2.0; // Slightly higher max glow
-const MIN_GLOW = 0.4; // Slightly higher min glow
+const MAX_GLOW = 1.4; // Further reduced glow
+const MIN_GLOW = 0.2; // Lower minimum glow
 const PULSE_SPEED = 0.02; // Even faster movement
 const MIN_CONNECTION_LIFETIME = 8000; // Even longer lifetime for more stability
 const CONNECTION_UPDATE_INTERVAL = 30; // More frequent updates
@@ -67,7 +67,7 @@ const MOUSE_INFLUENCE_RADIUS = 350; // Slightly reduced
 const MOUSE_REPEL_STRENGTH = 1.8; // Slightly reduced
 const MOUSE_ATTRACT_STRENGTH = 0.4; // Slightly stronger attract
 const MOUSE_FORCE_TRANSITION = 0.7; // Point where repel changes to attract
-const MOUSE_GLOW_INTENSITY = 2.0; // Reduced for more subtle glow
+const MOUSE_GLOW_INTENSITY = 1.4; // Reduced mouse glow
 const VELOCITY_DAMPENING = 0.92; // Less dampening for more continuous movement
 const FORCE_FIELD_STRENGTH = 0.7; // Reduced force
 const MOUSE_VELOCITY_MEMORY = 0.95; // Increased for smoother mouse tracking
@@ -250,13 +250,13 @@ export const NeuralBackground = () => {
     const alpha = Math.max(0, 1 - Math.abs(node.z) / Z_RANGE);
     outerGradient.addColorStop(
       0,
-      `${node.color}${Math.floor(alpha * 34)
+      `${node.color}${Math.floor(alpha * 25)
         .toString(16)
         .padStart(2, "0")}`
     );
     outerGradient.addColorStop(
       0.5,
-      `${node.color}${Math.floor(alpha * 17)
+      `${node.color}${Math.floor(alpha * 12)
         .toString(16)
         .padStart(2, "0")}`
     );
@@ -268,7 +268,7 @@ export const NeuralBackground = () => {
     ctx.fill();
 
     // Core glow with depth effect
-    ctx.shadowBlur = 15 * node.glowIntensity * currentScale;
+    ctx.shadowBlur = 12 * node.glowIntensity * currentScale;
     ctx.shadowColor = node.color;
 
     const innerGradient = ctx.createRadialGradient(
@@ -281,13 +281,13 @@ export const NeuralBackground = () => {
     );
     innerGradient.addColorStop(
       0,
-      `${node.color}${Math.floor(alpha * 255)
+      `${node.color}${Math.floor(alpha * 200)
         .toString(16)
         .padStart(2, "0")}`
     );
     innerGradient.addColorStop(
       1,
-      `${node.color}${Math.floor(alpha * 102)
+      `${node.color}${Math.floor(alpha * 80)
         .toString(16)
         .padStart(2, "0")}`
     );
@@ -308,13 +308,13 @@ export const NeuralBackground = () => {
     );
     highlightGradient.addColorStop(
       0,
-      `#ffffff${Math.floor(alpha * 255)
+      `#ffffff${Math.floor(alpha * 200)
         .toString(16)
         .padStart(2, "0")}`
     );
     highlightGradient.addColorStop(
       1,
-      `${node.color}${Math.floor(alpha * 51)
+      `${node.color}${Math.floor(alpha * 40)
         .toString(16)
         .padStart(2, "0")}`
     );
@@ -412,9 +412,9 @@ export const NeuralBackground = () => {
       const depthAlpha = Math.max(0, 1 - Math.abs(avgZ) / Z_RANGE);
 
       connection.initialOpacity = Math.min(1, connection.initialOpacity + deltaTime * 0.01);
-      const opacity = Math.min(1, progress * connection.initialOpacity * depthAlpha * 4); // More visibility
+      const opacity = Math.min(1, progress * connection.initialOpacity * depthAlpha * 3); // Reduced from 4
       const alpha = Math.floor(
-        Math.max(0, Math.min(255, strength * 0.9 * opacity * 255 * connection.drawProgress))
+        Math.max(0, Math.min(255, strength * 0.7 * opacity * 255 * connection.drawProgress)) // Reduced from 0.9
       ).toString(16).padStart(2, "0");
       
       // Calculate curve control point with safety checks
@@ -687,7 +687,7 @@ export const NeuralBackground = () => {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 w-full h-full bg-neural-bg"
+      className="fixed inset-0 w-full h-full bg-neural-bg opacity-50"
       style={{
         WebkitBackdropFilter: "blur(8px)",
         backdropFilter: "blur(8px)",

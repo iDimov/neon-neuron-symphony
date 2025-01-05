@@ -2,7 +2,7 @@ import { useRef, useEffect } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import gsap from 'gsap';
 import ScrollTrigger from 'gsap/ScrollTrigger';
-import { Code, Brain, Sparkles, ArrowRight, Rocket } from 'lucide-react';
+import { Code, Brain, Sparkles, ArrowRight, Rocket, Star } from 'lucide-react';
 // import { NeuralBackground } from './NeuralBackground';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -59,16 +59,17 @@ export const Hero = () => {
         >
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full 
                          bg-blue-500/10 border border-blue-500/20 backdrop-blur-sm">
-            <Rocket className="w-4 h-4 text-blue-400" />
+            <Star className="w-4 h-4 text-blue-400" />
             <span className="text-sm font-medium text-blue-400">
-              Welcome to the Future of IT Learning
+              Make learning IT English Fun Again!
             </span>
+            <Star className="w-4 h-4 text-blue-400" />
           </div>
         </motion.div>
 
         {/* Hero Text */}
         <div className="text-center max-w-4xl mx-auto mb-16 lg:mb-24">
-          <h1 className="hero-text text-4xl sm:text-6xl lg:text-7xl font-bold leading-none tracking-tight mb-8">
+          <h1 className="hero-text text-4xl sm:text-6xl lg:text-8xl font-bold leading-none tracking-tight mb-8">
             <span className="block bg-gradient-to-r from-cyan-300 via-blue-500 to-violet-500 
                            bg-clip-text text-transparent pb-2">
               English for IT People,
@@ -78,7 +79,7 @@ export const Hero = () => {
               Finally!
             </span>
           </h1>
-          <p className="hero-text text-lg sm:text-xl text-slate-400 max-w-2xl mx-auto">
+          <p className="hero-text text-lg sm:text-xl text-slate-300 max-w-2xl mx-auto">
             Welcome to the coziest meta-learning platform, where we turn scattered 
             English learning moments into your personal success story.
           </p>
