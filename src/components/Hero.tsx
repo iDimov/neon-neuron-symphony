@@ -98,7 +98,7 @@ export const Hero = () => {
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.8 + index * 0.15 }}
             >
-              <div className="relative p-6 rounded-2xl bg-white/5 backdrop-blur-2xl 
+              <div className="relative p-6 rounded-2xl backdrop-blur
                             border border-white/10 flex items-center gap-6">
                 <div className={`flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-r ${gradient} 
                                flex items-center justify-center`}>

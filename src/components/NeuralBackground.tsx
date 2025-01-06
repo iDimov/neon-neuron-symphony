@@ -42,41 +42,43 @@ const COLORS = [
   "#3B82F6",  // Blue
   "#8B5CF6",  // Purple
   "#A855F7",  // Violet
-  "#EC4899"   // Pink
+  "#EC4899",  // Pink
+  "#2DD4BF",  // Teal
+  "#4F46E5"   // Indigo
 ];
 
 const GRADIENT_COLORS = [
-  { color: '#3B82F6', opacity: 0.15 }, // Blue
-  { color: '#8B5CF6', opacity: 0.15 }, // Purple
-  { color: '#EC4899', opacity: 0.15 }, // Pink
+  { color: '#3B82F6', opacity: 0.08, speed: 0.00015, scale: 1.2 },    // Blue
+  { color: '#8B5CF6', opacity: 0.08, speed: 0.00018, scale: 1.1 },    // Purple
+  { color: '#EC4899', opacity: 0.08, speed: 0.00012, scale: 1.3 },    // Pink
+  { color: '#2DD4BF', opacity: 0.06, speed: 0.00020, scale: 1.15 }    // Teal
 ];
 
-const NODE_COUNT = 45;
-const CONNECTION_DISTANCE = 300;
+const NODE_COUNT = 30;
+const CONNECTION_DISTANCE = 320;
 const MAX_CONNECTIONS_PER_NODE = 3;
-const BASE_SPEED = 0.08;
-const MAX_GLOW = 1.5;
+const BASE_SPEED = 0.07;
+const MAX_GLOW = 1.6;
 const MIN_GLOW = 0.4;
-const PULSE_SPEED = 0.015;
-const MIN_CONNECTION_LIFETIME = 8000;
-const CONNECTION_UPDATE_INTERVAL = 30;
-const LINE_DRAW_SPEED = 0.06;
-const VELOCITY_DAMPENING = 0.94;
-const Z_RANGE = 200;
-const INITIAL_ANIMATION_DURATION = 1500;
-const WAVE_FREQUENCY = 0.0002;
+const PULSE_SPEED = 0.012;
+const MIN_CONNECTION_LIFETIME = 10000;
+const CONNECTION_UPDATE_INTERVAL = 25;
+const LINE_DRAW_SPEED = 0.05;
+const VELOCITY_DAMPENING = 0.95;
+const Z_RANGE = 180;
+const INITIAL_ANIMATION_DURATION = 2000;
+const WAVE_FREQUENCY = 0.00018;
 const PULSE_SIZE_MIN = 2;
 const PULSE_SIZE_MAX = 4;
 const PULSE_SPAWN_CHANCE = 0.004;
-const PULSE_FADE_SPEED = 0.012;
-const OSCILLATION_SPEED_RANGE = [0.0008, 0.0015];
-const NODE_MOVEMENT_FREQUENCY = 0.0003;
-const GLOW_WAVE_FREQUENCY = 0.0006;
-const BASE_MOVEMENT_RANGE = 0.8;
-const MOVEMENT_VARIATION = 0.5;
-const RETURN_FORCE = 0.0002;
-const MAX_OFFSET = 40;
-const GRADIENT_SPEED = 0.0002;
+const PULSE_FADE_SPEED = 0.01;
+const OSCILLATION_SPEED_RANGE = [0.0006, 0.0012];
+const NODE_MOVEMENT_FREQUENCY = 0.00025;
+const GLOW_WAVE_FREQUENCY = 0.0005;
+const BASE_MOVEMENT_RANGE = 0.9;
+const MOVEMENT_VARIATION = 0.6;
+const RETURN_FORCE = 0.00015;
+const MAX_OFFSET = 45;
 
 export const NeuralBackground = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -528,16 +530,19 @@ export const NeuralBackground = () => {
   const drawAnimatedGradients = useCallback((ctx: CanvasRenderingContext2D, timestamp: number, width: number, height: number) => {
     ctx.save();
     
-    // Create three overlapping gradients with different animations
+    // Create overlapping gradients with different animations
     GRADIENT_COLORS.forEach((gradientColor, index) => {
-      const time = timestamp * GRADIENT_SPEED;
+      const time = timestamp * gradientColor.speed;
       const angleOffset = (Math.PI * 2 / GRADIENT_COLORS.length) * index;
       const angle = time + angleOffset;
       
-      // Calculate moving gradient positions
-      const centerX = width / 2 + Math.cos(angle) * (width * 0.3);
-      const centerY = height / 2 + Math.sin(angle * 0.7) * (height * 0.3);
-      const radius = Math.max(width, height) * 0.8;
+      // More complex movement pattern
+      const xOffset = Math.cos(angle) * width * 0.35 + Math.sin(time * 0.3) * width * 0.1;
+      const yOffset = Math.sin(angle * 0.7) * height * 0.35 + Math.cos(time * 0.4) * height * 0.1;
+      
+      const centerX = width / 2 + xOffset;
+      const centerY = height / 2 + yOffset;
+      const radius = Math.max(width, height) * gradientColor.scale;
       
       const gradient = ctx.createRadialGradient(
         centerX,
@@ -548,8 +553,10 @@ export const NeuralBackground = () => {
         radius
       );
       
+      // Enhanced gradient with more color stops
       gradient.addColorStop(0, `${gradientColor.color}${Math.floor(gradientColor.opacity * 255).toString(16).padStart(2, '0')}`);
-      gradient.addColorStop(0.5, `${gradientColor.color}${Math.floor(gradientColor.opacity * 127).toString(16).padStart(2, '0')}`);
+      gradient.addColorStop(0.3, `${gradientColor.color}${Math.floor(gradientColor.opacity * 200).toString(16).padStart(2, '0')}`);
+      gradient.addColorStop(0.6, `${gradientColor.color}${Math.floor(gradientColor.opacity * 127).toString(16).padStart(2, '0')}`);
       gradient.addColorStop(1, 'transparent');
       
       ctx.globalCompositeOperation = 'screen';
@@ -624,10 +631,10 @@ export const NeuralBackground = () => {
     <div className="fixed inset-0 overflow-hidden">
       <canvas
         ref={canvasRef}
-        className="absolute inset-0 w-full h-full bg-neural-bg"
+        className="absolute inset-0 w-full h-full bg-[#000000] opacity-30"
         style={{
-          WebkitBackdropFilter: "blur(8px)",
-          backdropFilter: "blur(8px)",
+          WebkitBackdropFilter: "blur(12px)",
+          backdropFilter: "blur(12px)",
           zIndex: -1,
         }}
       />
