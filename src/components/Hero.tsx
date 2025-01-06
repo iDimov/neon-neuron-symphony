@@ -31,24 +31,24 @@ export const Hero = () => {
         y: 30,
         opacity: 0,
         duration: 0.8,
-        delay: delay + 0.3,
-        ease: "power3.out"
+        delay: delay + 0.4,
+        ease: "expo.inOut"
       });
 
       gsap.from(".hero-title-2", {
         y: 30,
         opacity: 0,
         duration: 0.8,
-        delay: delay + 0.5,
-        ease: "power3.out"
+        delay: delay + 0.6,
+        ease: "expo.inOut"
       });
 
       gsap.from(".hero-subtitle", {
         y: 20,
         opacity: 0,
         duration: 0.8,
-        delay: delay + 0.7,
-        ease: "power3.out"
+        delay: delay + 0.8,
+        ease: "expo.inOut"
       });
 
       // Feature cards animations
@@ -57,8 +57,8 @@ export const Hero = () => {
         opacity: 0,
         duration: 0.8,
         stagger: 0.2,
-        delay: delay + 1,
-        ease: "power3.out"
+        delay: delay + 1.3,
+        ease: "expo.out"
       });
     }, heroRef);
 
