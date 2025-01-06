@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import React, { useCallback, useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 
 interface Node {
   x: number;
@@ -57,18 +57,18 @@ const MAX_CONNECTIONS_PER_NODE = 2;
 const BASE_SPEED = 0.03;
 const MAX_GLOW = 1.2;
 const MIN_GLOW = 0.3;
-const PULSE_SPEED = 0.008;
+const PULSE_SPEED = 0.01;
 const MIN_CONNECTION_LIFETIME = 15000;
-const CONNECTION_UPDATE_INTERVAL = 45;
-const LINE_DRAW_SPEED = 0.15;
+const CONNECTION_UPDATE_INTERVAL = 15;
+const LINE_DRAW_SPEED = 0.03;
 const VELOCITY_DAMPENING = 0.97;
 const Z_RANGE = 150;
-const INITIAL_ANIMATION_DURATION = 1500;
+const INITIAL_ANIMATION_DURATION = 900;
 const WAVE_FREQUENCY = 0.0001;
-const PULSE_SIZE_MIN = 1.5;
-const PULSE_SIZE_MAX = 3;
-const PULSE_SPAWN_CHANCE = 0.003;
-const PULSE_FADE_SPEED = 0.006;
+const PULSE_SIZE_MIN = 0.5;
+const PULSE_SIZE_MAX = 4.5;
+const PULSE_SPAWN_CHANCE = 0.015;
+const PULSE_FADE_SPEED = 0.008;
 const OSCILLATION_SPEED_RANGE = [0.0003, 0.0006];
 const NODE_MOVEMENT_FREQUENCY = 0.00015;
 const GLOW_WAVE_FREQUENCY = 0.0003;
@@ -87,7 +87,7 @@ export const NeuralBackground = () => {
   const frameCountRef = useRef<number>(0);
   const animationFrameRef = useRef<number>();
   const gradientCacheRef = useRef<Map<string, CanvasGradient>>(new Map());
-  const opacityRef = useRef<number>(1);
+  const [opacity, setOpacity] = useState(1);
 
   const initNodes = useCallback((width: number, height: number) => {
     return Array.from({ length: NODE_COUNT }, () => {
@@ -250,7 +250,7 @@ export const NeuralBackground = () => {
 
     currentConnections.forEach((conn) => {
       conn.lifetime--;
-      conn.drawProgress = Math.min(1, conn.drawProgress + LINE_DRAW_SPEED);
+      conn.drawProgress = Math.min(1, conn.drawProgress + LINE_DRAW_SPEED * (1 - conn.drawProgress));
     });
 
     connectionsRef.current = currentConnections.filter(
@@ -290,8 +290,8 @@ export const NeuralBackground = () => {
               strength: 1 - distance / CONNECTION_DISTANCE,
               lifetime: MIN_CONNECTION_LIFETIME + Math.random() * 2000,
               width: Math.random() * 1.5 + 1,
-              initialOpacity: 1,
-              drawProgress: 1,
+              initialOpacity: 0.4,
+              drawProgress: 0.4,
             });
           }
         }
@@ -320,7 +320,7 @@ export const NeuralBackground = () => {
 
         connection.initialOpacity = Math.min(
           1,
-          connection.initialOpacity + deltaTime * 0.008
+          connection.initialOpacity + deltaTime * 0.012
         );
         const opacity = Math.min(
           1,
@@ -353,7 +353,6 @@ export const NeuralBackground = () => {
         ctx.lineCap = "round";
         ctx.lineWidth = Math.max(0.8, width * depthAlpha * 1.2);
 
-        // Enhanced connection gradient
         const gradient = ctx.createLinearGradient(
           nodeA.x,
           nodeA.y,
@@ -370,18 +369,16 @@ export const NeuralBackground = () => {
         ctx.quadraticCurveTo(controlX, controlY, nodeB.x, nodeB.y);
         ctx.stroke();
 
-        // Enhanced glow effect for connections
         ctx.shadowBlur = 8;
         ctx.shadowColor = nodeA.color;
         ctx.stroke();
 
         ctx.restore();
 
-        // Pulse animation with enhanced visibility
         if (
-          connection.drawProgress > 0.3 &&
-          connection.pulses.length === 0 &&
-          Math.random() < PULSE_SPAWN_CHANCE
+          connection.drawProgress > 0.1 &&
+          connection.pulses.length < 2 &&
+          Math.random() < PULSE_SPAWN_CHANCE * progress
         ) {
           connection.pulses.push({
             position: 0,
@@ -399,11 +396,10 @@ export const NeuralBackground = () => {
             Math.pow(1 - t, 2) * nodeA.y +
             2 * (1 - t) * t * controlY +
             Math.pow(t, 2) * nodeB.y;
+          const pulseProgress = Math.sin(pulse.position * Math.PI);
           const pulseSize = Math.max(
             PULSE_SIZE_MIN,
-            (PULSE_SIZE_MIN +
-              Math.sin(pulse.position * Math.PI) *
-                (PULSE_SIZE_MAX - PULSE_SIZE_MIN)) *
+            (PULSE_SIZE_MIN + pulseProgress * (PULSE_SIZE_MAX - PULSE_SIZE_MIN)) *
               depthAlpha * 1.2
           );
 
@@ -419,7 +415,7 @@ export const NeuralBackground = () => {
             0,
             Math.min(
               1,
-              pulse.opacity * Math.sin(pulse.position * Math.PI) * opacity * 2.5
+              pulse.opacity * pulseProgress * opacity * 2
             )
           );
 
@@ -629,12 +625,15 @@ export const NeuralBackground = () => {
     const startFadeOut = () => {
       setTimeout(() => {
         const fadeInterval = setInterval(() => {
-          opacityRef.current = Math.max(0.5, opacityRef.current - 0.02);
-          if (opacityRef.current <= 0.5) {
-            clearInterval(fadeInterval);
-          }
+          setOpacity(prev => {
+            const newOpacity = Math.max(0.7, prev - 0.02);
+            if (newOpacity <= 0.4) {
+              clearInterval(fadeInterval);
+            }
+            return newOpacity;
+          });
         }, 16);
-      }, 3500);
+      }, 4000); // Start fade after neural animation and hero content appear
     };
 
     startFadeOut();
@@ -649,7 +648,7 @@ export const NeuralBackground = () => {
           WebkitBackdropFilter: "blur(12px)",
           backdropFilter: "blur(12px)",
           zIndex: -1,
-          opacity: opacityRef.current,
+          opacity: opacity,
         }}
       />
     </div>
