@@ -43,42 +43,39 @@ const COLORS = [
   "#8B5CF6",  // Purple
   "#A855F7",  // Violet
   "#EC4899",  // Pink
-  "#2DD4BF",  // Teal
-  "#4F46E5"   // Indigo
 ];
 
 const GRADIENT_COLORS = [
-  { color: '#3B82F6', opacity: 0.08, speed: 0.00015, scale: 1.2 },    // Blue
-  { color: '#8B5CF6', opacity: 0.08, speed: 0.00018, scale: 1.1 },    // Purple
-  { color: '#EC4899', opacity: 0.08, speed: 0.00012, scale: 1.3 },    // Pink
-  { color: '#2DD4BF', opacity: 0.06, speed: 0.00020, scale: 1.15 }    // Teal
+  { color: '#3B82F6', opacity: 0.05, speed: 0.00008, scale: 1.2 },    // Blue
+  { color: '#8B5CF6', opacity: 0.05, speed: 0.00010, scale: 1.1 },    // Purple
+  { color: '#EC4899', opacity: 0.05, speed: 0.00006, scale: 1.3 },    // Pink
 ];
 
-const NODE_COUNT = 30;
-const CONNECTION_DISTANCE = 320;
-const MAX_CONNECTIONS_PER_NODE = 3;
-const BASE_SPEED = 0.07;
-const MAX_GLOW = 1.6;
-const MIN_GLOW = 0.4;
-const PULSE_SPEED = 0.012;
-const MIN_CONNECTION_LIFETIME = 10000;
-const CONNECTION_UPDATE_INTERVAL = 25;
-const LINE_DRAW_SPEED = 0.05;
-const VELOCITY_DAMPENING = 0.95;
-const Z_RANGE = 180;
-const INITIAL_ANIMATION_DURATION = 2000;
-const WAVE_FREQUENCY = 0.00018;
-const PULSE_SIZE_MIN = 2;
-const PULSE_SIZE_MAX = 4;
-const PULSE_SPAWN_CHANCE = 0.004;
-const PULSE_FADE_SPEED = 0.01;
-const OSCILLATION_SPEED_RANGE = [0.0006, 0.0012];
-const NODE_MOVEMENT_FREQUENCY = 0.00025;
-const GLOW_WAVE_FREQUENCY = 0.0005;
-const BASE_MOVEMENT_RANGE = 0.9;
-const MOVEMENT_VARIATION = 0.6;
-const RETURN_FORCE = 0.00015;
-const MAX_OFFSET = 45;
+const NODE_COUNT = 25;
+const CONNECTION_DISTANCE = 250;
+const MAX_CONNECTIONS_PER_NODE = 2;
+const BASE_SPEED = 0.03;
+const MAX_GLOW = 1.2;
+const MIN_GLOW = 0.3;
+const PULSE_SPEED = 0.008;
+const MIN_CONNECTION_LIFETIME = 15000;
+const CONNECTION_UPDATE_INTERVAL = 45;
+const LINE_DRAW_SPEED = 0.15;
+const VELOCITY_DAMPENING = 0.97;
+const Z_RANGE = 150;
+const INITIAL_ANIMATION_DURATION = 1500;
+const WAVE_FREQUENCY = 0.0001;
+const PULSE_SIZE_MIN = 1.5;
+const PULSE_SIZE_MAX = 3;
+const PULSE_SPAWN_CHANCE = 0.003;
+const PULSE_FADE_SPEED = 0.006;
+const OSCILLATION_SPEED_RANGE = [0.0003, 0.0006];
+const NODE_MOVEMENT_FREQUENCY = 0.00015;
+const GLOW_WAVE_FREQUENCY = 0.0003;
+const BASE_MOVEMENT_RANGE = 0.8;
+const MOVEMENT_VARIATION = 0.4;
+const RETURN_FORCE = 0.00008;
+const MAX_OFFSET = 40;
 
 export const NeuralBackground = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -90,6 +87,7 @@ export const NeuralBackground = () => {
   const frameCountRef = useRef<number>(0);
   const animationFrameRef = useRef<number>();
   const gradientCacheRef = useRef<Map<string, CanvasGradient>>(new Map());
+  const opacityRef = useRef<number>(1);
 
   const initNodes = useCallback((width: number, height: number) => {
     return Array.from({ length: NODE_COUNT }, () => {
@@ -292,8 +290,8 @@ export const NeuralBackground = () => {
               strength: 1 - distance / CONNECTION_DISTANCE,
               lifetime: MIN_CONNECTION_LIFETIME + Math.random() * 2000,
               width: Math.random() * 1.5 + 1,
-              initialOpacity: 0.6,
-              drawProgress: 0.3,
+              initialOpacity: 1,
+              drawProgress: 1,
             });
           }
         }
@@ -627,15 +625,31 @@ export const NeuralBackground = () => {
     };
   }, [animate, initNodes]);
 
+  useEffect(() => {
+    const startFadeOut = () => {
+      setTimeout(() => {
+        const fadeInterval = setInterval(() => {
+          opacityRef.current = Math.max(0.5, opacityRef.current - 0.02);
+          if (opacityRef.current <= 0.5) {
+            clearInterval(fadeInterval);
+          }
+        }, 16);
+      }, 3500);
+    };
+
+    startFadeOut();
+  }, []);
+
   return (
     <div className="fixed inset-0 overflow-hidden">
       <canvas
         ref={canvasRef}
-        className="absolute inset-0 w-full h-full bg-[#000000] opacity-30"
+        className="absolute inset-0 w-full h-full bg-[#030409] transition-opacity duration-1000"
         style={{
           WebkitBackdropFilter: "blur(12px)",
           backdropFilter: "blur(12px)",
           zIndex: -1,
+          opacity: opacityRef.current,
         }}
       />
     </div>
