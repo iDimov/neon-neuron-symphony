@@ -1,4 +1,4 @@
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion } from "framer-motion";
 import React, { useCallback, useEffect, useRef } from "react";
 
 interface Node {
@@ -37,33 +37,46 @@ interface Connection {
   drawProgress: number;
 }
 
-const COLORS = ["#67E8F9", "#3B82F6", "#8B5CF6", "#A855F7", "#EC4899"];
+const COLORS = [
+  "#67E8F9",  // Cyan
+  "#3B82F6",  // Blue
+  "#8B5CF6",  // Purple
+  "#A855F7",  // Violet
+  "#EC4899"   // Pink
+];
 
-const NODE_COUNT = 33; // Further reduced for better performance
-const CONNECTION_DISTANCE = 250;
-const MAX_CONNECTIONS_PER_NODE = 1;
-const BASE_SPEED = 0.1;
-const MAX_GLOW = 1.2;
-const MIN_GLOW = 0.3;
-const PULSE_SPEED = 0.02;
-const MIN_CONNECTION_LIFETIME = 6000;
-const CONNECTION_UPDATE_INTERVAL = 45;
-const LINE_DRAW_SPEED = 0.08;
-const VELOCITY_DAMPENING = 0.92;
-const Z_RANGE = 250;
-const INITIAL_ANIMATION_DURATION = 1200;
-const WAVE_FREQUENCY = 0.0003;
+const GRADIENT_COLORS = [
+  { color: '#3B82F6', opacity: 0.15 }, // Blue
+  { color: '#8B5CF6', opacity: 0.15 }, // Purple
+  { color: '#EC4899', opacity: 0.15 }, // Pink
+];
+
+const NODE_COUNT = 45;
+const CONNECTION_DISTANCE = 300;
+const MAX_CONNECTIONS_PER_NODE = 3;
+const BASE_SPEED = 0.08;
+const MAX_GLOW = 1.5;
+const MIN_GLOW = 0.4;
+const PULSE_SPEED = 0.015;
+const MIN_CONNECTION_LIFETIME = 8000;
+const CONNECTION_UPDATE_INTERVAL = 30;
+const LINE_DRAW_SPEED = 0.06;
+const VELOCITY_DAMPENING = 0.94;
+const Z_RANGE = 200;
+const INITIAL_ANIMATION_DURATION = 1500;
+const WAVE_FREQUENCY = 0.0002;
 const PULSE_SIZE_MIN = 2;
 const PULSE_SIZE_MAX = 4;
-const PULSE_SPAWN_CHANCE = 0.003;
-const PULSE_FADE_SPEED = 0.015;
-const OSCILLATION_SPEED_RANGE = [0.001, 0.002];
-const NODE_MOVEMENT_FREQUENCY = 0.0004;
-const GLOW_WAVE_FREQUENCY = 0.0008;
-const BASE_MOVEMENT_RANGE = 0.7;
-const MOVEMENT_VARIATION = 0.4;
-const RETURN_FORCE = 0.0003;
-const MAX_OFFSET = 35;
+const PULSE_SPAWN_CHANCE = 0.004;
+const PULSE_FADE_SPEED = 0.012;
+const OSCILLATION_SPEED_RANGE = [0.0008, 0.0015];
+const NODE_MOVEMENT_FREQUENCY = 0.0003;
+const GLOW_WAVE_FREQUENCY = 0.0006;
+const BASE_MOVEMENT_RANGE = 0.8;
+const MOVEMENT_VARIATION = 0.5;
+const RETURN_FORCE = 0.0002;
+const MAX_OFFSET = 40;
+const GRADIENT_SPEED = 0.0002;
 
 export const NeuralBackground = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -75,8 +88,6 @@ export const NeuralBackground = () => {
   const frameCountRef = useRef<number>(0);
   const animationFrameRef = useRef<number>();
   const gradientCacheRef = useRef<Map<string, CanvasGradient>>(new Map());
-  const { scrollY } = useScroll();
-const y = useTransform(scrollY, [0, 300], [0, 50]);
 
   const initNodes = useCallback((width: number, height: number) => {
     return Array.from({ length: NODE_COUNT }, () => {
@@ -149,6 +160,7 @@ const y = useTransform(scrollY, [0, 300], [0, 50]);
 
       ctx.save();
 
+      // Outer glow
       const outerGradient = getOrCreateGradient(
         ctx,
         `outer-${node.color}-${alpha}`,
@@ -159,17 +171,17 @@ const y = useTransform(scrollY, [0, 300], [0, 50]);
             0,
             node.x,
             node.y,
-            currentRadius * 8
+            currentRadius * 10
           );
           gradient.addColorStop(
             0,
-            `${node.color}${Math.floor(alpha * 25)
+            `${node.color}${Math.floor(alpha * 30)
               .toString(16)
               .padStart(2, "0")}`
           );
           gradient.addColorStop(
             0.5,
-            `${node.color}${Math.floor(alpha * 12)
+            `${node.color}${Math.floor(alpha * 15)
               .toString(16)
               .padStart(2, "0")}`
           );
@@ -180,12 +192,14 @@ const y = useTransform(scrollY, [0, 300], [0, 50]);
 
       ctx.fillStyle = outerGradient;
       ctx.beginPath();
-      ctx.arc(node.x, node.y, currentRadius * 8, 0, Math.PI * 2);
+      ctx.arc(node.x, node.y, currentRadius * 10, 0, Math.PI * 2);
       ctx.fill();
 
-      ctx.shadowBlur = 12 * node.glowIntensity * currentScale;
+      // Enhanced glow effect
+      ctx.shadowBlur = 15 * node.glowIntensity * currentScale;
       ctx.shadowColor = node.color;
 
+      // Inner bright core
       const innerGradient = getOrCreateGradient(
         ctx,
         `inner-${node.color}-${alpha}`,
@@ -196,17 +210,23 @@ const y = useTransform(scrollY, [0, 300], [0, 50]);
             0,
             node.x,
             node.y,
-            currentRadius * 2
+            currentRadius * 2.5
           );
           gradient.addColorStop(
             0,
-            `${node.color}${Math.floor(alpha * 200)
+            `${node.color}${Math.floor(alpha * 255)
+              .toString(16)
+              .padStart(2, "0")}`
+          );
+          gradient.addColorStop(
+            0.6,
+            `${node.color}${Math.floor(alpha * 180)
               .toString(16)
               .padStart(2, "0")}`
           );
           gradient.addColorStop(
             1,
-            `${node.color}${Math.floor(alpha * 80)
+            `${node.color}${Math.floor(alpha * 100)
               .toString(16)
               .padStart(2, "0")}`
           );
@@ -216,7 +236,7 @@ const y = useTransform(scrollY, [0, 300], [0, 50]);
 
       ctx.fillStyle = innerGradient;
       ctx.beginPath();
-      ctx.arc(node.x, node.y, currentRadius * 2, 0, Math.PI * 2);
+      ctx.arc(node.x, node.y, currentRadius * 2.5, 0, Math.PI * 2);
       ctx.fill();
 
       ctx.restore();
@@ -300,18 +320,18 @@ const y = useTransform(scrollY, [0, 300], [0, 50]);
 
         connection.initialOpacity = Math.min(
           1,
-          connection.initialOpacity + deltaTime * 0.01
+          connection.initialOpacity + deltaTime * 0.008
         );
         const opacity = Math.min(
           1,
-          progress * connection.initialOpacity * depthAlpha * 3
+          progress * connection.initialOpacity * depthAlpha * 2.5
         );
         const alpha = Math.floor(
           Math.max(
             0,
             Math.min(
               255,
-              strength * 0.7 * opacity * 255 * connection.drawProgress
+              strength * 0.8 * opacity * 255 * connection.drawProgress
             )
           )
         )
@@ -320,7 +340,7 @@ const y = useTransform(scrollY, [0, 300], [0, 50]);
 
         const midX = (nodeA.x + nodeB.x) / 2;
         const midY = (nodeA.y + nodeB.y) / 2;
-        const waveAmplitude = Math.min(15, distance * 0.1) * depthAlpha;
+        const waveAmplitude = Math.min(20, distance * 0.12) * depthAlpha;
         const waveOffset =
           Math.sin(timestamp * WAVE_FREQUENCY + nodeA.oscillationOffset) *
           waveAmplitude;
@@ -331,8 +351,9 @@ const y = useTransform(scrollY, [0, 300], [0, 50]);
 
         ctx.save();
         ctx.lineCap = "round";
-        ctx.lineWidth = Math.max(0.5, width * depthAlpha);
+        ctx.lineWidth = Math.max(0.8, width * depthAlpha * 1.2);
 
+        // Enhanced connection gradient
         const gradient = ctx.createLinearGradient(
           nodeA.x,
           nodeA.y,
@@ -348,9 +369,15 @@ const y = useTransform(scrollY, [0, 300], [0, 50]);
         ctx.moveTo(nodeA.x, nodeA.y);
         ctx.quadraticCurveTo(controlX, controlY, nodeB.x, nodeB.y);
         ctx.stroke();
+
+        // Enhanced glow effect for connections
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = nodeA.color;
+        ctx.stroke();
+
         ctx.restore();
 
-        // Pulse animation
+        // Pulse animation with enhanced visibility
         if (
           connection.drawProgress > 0.3 &&
           connection.pulses.length === 0 &&
@@ -377,7 +404,7 @@ const y = useTransform(scrollY, [0, 300], [0, 50]);
             (PULSE_SIZE_MIN +
               Math.sin(pulse.position * Math.PI) *
                 (PULSE_SIZE_MAX - PULSE_SIZE_MIN)) *
-              depthAlpha
+              depthAlpha * 1.2
           );
 
           const pulseGradient = ctx.createRadialGradient(
@@ -392,7 +419,7 @@ const y = useTransform(scrollY, [0, 300], [0, 50]);
             0,
             Math.min(
               1,
-              pulse.opacity * Math.sin(pulse.position * Math.PI) * opacity * 2
+              pulse.opacity * Math.sin(pulse.position * Math.PI) * opacity * 2.5
             )
           );
 
@@ -404,7 +431,7 @@ const y = useTransform(scrollY, [0, 300], [0, 50]);
           );
           pulseGradient.addColorStop(
             0.5,
-            `${nodeA.color}${Math.floor(150 * pulseOpacity)
+            `${nodeA.color}${Math.floor(180 * pulseOpacity)
               .toString(16)
               .padStart(2, "0")}`
           );
@@ -498,48 +525,77 @@ const y = useTransform(scrollY, [0, 300], [0, 50]);
     []
   );
 
-  const animate = useCallback(
-    (timestamp: number) => {
-      const canvas = canvasRef.current;
-      const ctx = ctxRef.current;
-      if (!canvas || !ctx) return;
-
-      if (startTimeRef.current === 0) {
-        startTimeRef.current = timestamp;
-      }
-
-      const deltaTime = Math.min(32, timestamp - lastTimeRef.current) / 16.67;
-      lastTimeRef.current = timestamp;
-      frameCountRef.current++;
-
-      const progress = Math.min(
-        1,
-        (timestamp - startTimeRef.current) / INITIAL_ANIMATION_DURATION
+  const drawAnimatedGradients = useCallback((ctx: CanvasRenderingContext2D, timestamp: number, width: number, height: number) => {
+    ctx.save();
+    
+    // Create three overlapping gradients with different animations
+    GRADIENT_COLORS.forEach((gradientColor, index) => {
+      const time = timestamp * GRADIENT_SPEED;
+      const angleOffset = (Math.PI * 2 / GRADIENT_COLORS.length) * index;
+      const angle = time + angleOffset;
+      
+      // Calculate moving gradient positions
+      const centerX = width / 2 + Math.cos(angle) * (width * 0.3);
+      const centerY = height / 2 + Math.sin(angle * 0.7) * (height * 0.3);
+      const radius = Math.max(width, height) * 0.8;
+      
+      const gradient = ctx.createRadialGradient(
+        centerX,
+        centerY,
+        0,
+        centerX,
+        centerY,
+        radius
       );
+      
+      gradient.addColorStop(0, `${gradientColor.color}${Math.floor(gradientColor.opacity * 255).toString(16).padStart(2, '0')}`);
+      gradient.addColorStop(0.5, `${gradientColor.color}${Math.floor(gradientColor.opacity * 127).toString(16).padStart(2, '0')}`);
+      gradient.addColorStop(1, 'transparent');
+      
+      ctx.globalCompositeOperation = 'screen';
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, width, height);
+    });
+    
+    ctx.restore();
+  }, []);
 
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const animate = useCallback((timestamp: number) => {
+    const canvas = canvasRef.current;
+    const ctx = ctxRef.current;
+    if (!canvas || !ctx) return;
 
-      updateNodes(deltaTime, canvas.width, canvas.height, progress, timestamp);
+    if (startTimeRef.current === 0) {
+      startTimeRef.current = timestamp;
+    }
 
-      if (frameCountRef.current % CONNECTION_UPDATE_INTERVAL === 0) {
-        updateConnections();
-      }
+    const deltaTime = Math.min(32, timestamp - lastTimeRef.current) / 16.67;
+    lastTimeRef.current = timestamp;
+    frameCountRef.current++;
 
-      drawConnections(ctx, deltaTime, timestamp, progress);
-      nodesRef.current.forEach((node) =>
-        drawNode(ctx, node, timestamp, progress)
-      );
+    const progress = Math.min(1, (timestamp - startTimeRef.current) / INITIAL_ANIMATION_DURATION);
 
-      animationFrameRef.current = requestAnimationFrame(animate);
-    },
-    [updateNodes, updateConnections, drawConnections, drawNode]
-  );
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw animated gradients first (background layer)
+    drawAnimatedGradients(ctx, timestamp, canvas.width, canvas.height);
+
+    // Then draw neural network
+    updateNodes(deltaTime, canvas.width, canvas.height, progress, timestamp);
+    if (frameCountRef.current % CONNECTION_UPDATE_INTERVAL === 0) {
+      updateConnections();
+    }
+    drawConnections(ctx, deltaTime, timestamp, progress);
+    nodesRef.current.forEach(node => drawNode(ctx, node, timestamp, progress));
+
+    animationFrameRef.current = requestAnimationFrame(animate);
+  }, [updateNodes, updateConnections, drawConnections, drawNode, drawAnimatedGradients]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    ctxRef.current = canvas.getContext("2d", { alpha: true });
+    ctxRef.current = canvas.getContext('2d', { alpha: true });
     const ctx = ctxRef.current;
     if (!ctx) return;
 
@@ -553,41 +609,28 @@ const y = useTransform(scrollY, [0, 300], [0, 50]);
     };
 
     handleResize();
-    window.addEventListener("resize", handleResize);
+    window.addEventListener('resize', handleResize);
     animationFrameRef.current = requestAnimationFrame(animate);
 
     return () => {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
-      window.removeEventListener("resize", handleResize);
+      window.removeEventListener('resize', handleResize);
     };
   }, [animate, initNodes]);
 
   return (
-    <div>
+    <div className="fixed inset-0 overflow-hidden">
       <canvas
         ref={canvasRef}
-        className="fixed inset-0 w-full h-full bg-neural-bg opacity-50"
+        className="absolute inset-0 w-full h-full bg-neural-bg"
         style={{
           WebkitBackdropFilter: "blur(8px)",
           backdropFilter: "blur(8px)",
           zIndex: -1,
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
         }}
       />
-
-      <div className="absolute inset-0">
-        <motion.div style={{ y }} className="absolute inset-0">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_0%_0%,rgba(67,56,202,0.12),transparent_50%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_100%_100%,rgba(124,58,237,0.12),transparent_50%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(59,130,246,0.12),transparent_50%)]" />
-        </motion.div>
-      </div>
     </div>
   );
 };
