@@ -22,7 +22,7 @@ export const Hero = () => {
         y: -20,
         opacity: 0,
         duration: 0.8,
-        delay: delay,
+        delay: delay + 2,
         ease: "power3.out"
       });
 
@@ -83,11 +83,11 @@ export const Hero = () => {
         <div className="text-center max-w-4xl mx-auto mb-16 lg:mb-24">
           <h1 className="text-4xl sm:text-6xl lg:text-8xl font-bold leading-none tracking-tight mb-8">
             <span className="hero-title-1 block bg-gradient-to-r from-cyan-300 via-blue-500 to-violet-500 
-                           bg-clip-text text-transparent pb-2">
+                           bg-clip-text text-transparent pb-4">
               English for IT People,
             </span>
             <span className="hero-title-2 block bg-gradient-to-r from-violet-400 via-purple-500 to-pink-500 
-                           bg-clip-text text-transparent">
+                           bg-clip-text text-transparent leading-tight pb-2">
               Finally!
             </span>
           </h1>

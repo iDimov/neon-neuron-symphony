@@ -12,6 +12,7 @@ const Index = () => {
     <main className="relative min-h-screen overflow-hidden bg-neural-bg">
       <NeuralBackground />
       <Hero />
+      <CorePrinciples />
       {/* <AIPrinciplesAnimation /> */}
       {/* <HeroAnimation /> */}
       {/* <AnimatedLearningMethods /> */}
