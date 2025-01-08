@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
 import { Brain, BookOpen, Rocket, Zap, Target, Heart, Lightbulb, Database, Repeat, Leaf } from 'lucide-react';
 
 const principles = [
@@ -77,132 +77,117 @@ const principles = [
   }
 ];
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.2,
-      delayChildren: 0.3
-    }
-  }
-};
-
-const cardVariants = {
-  hidden: { 
-    opacity: 0,
-    y: 20
-  },
-  visible: { 
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.6,
-      ease: [0.23, 1, 0.32, 1],
-      staggerChildren: 0.1
-    }
-  }
-};
-
-const principleVariants = {
-  hidden: { 
-    opacity: 0,
-    x: -20
-  },
-  visible: { 
-    opacity: 1,
-    x: 0,
-    transition: {
-      duration: 0.5,
-      ease: [0.23, 1, 0.32, 1]
-    }
-  }
-};
-
 export const CorePrinciples = () => {
+  const containerRef = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start end", "end start"]
+  });
+
+  const opacity = useSpring(useTransform(scrollYProgress, [0, 0.2], [0, 1]), {
+    stiffness: 100,
+    damping: 30
+  });
+
+  const y = useSpring(useTransform(scrollYProgress, [0, 0.2], [100, 0]), {
+    stiffness: 100,
+    damping: 30
+  });
+
   return (
-    <section className="relative py-20 lg:py-32 bg-[#030409]/80 backdrop-blur-sm">
+    <section ref={containerRef} className="relative py-20 lg:py-32 overflow-hidden">
+      <div className="absolute inset-0 bg-[#030409]/90" />
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#030409]/50 to-[#030409]" />
+      <motion.div 
+        className="absolute inset-0 opacity-20"
+        style={{
+          background: 'radial-gradient(circle at 50% 50%, rgba(124,58,237,0.1), transparent 70%)',
+          filter: 'blur(60px)',
+        }}
+      />
       
       <div className="container relative mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8, ease: [0.23, 1, 0.32, 1] }}
-          className="text-center max-w-3xl mx-auto mb-16"
+          style={{ opacity, y }}
+          className="text-center max-w-3xl mx-auto mb-20"
         >
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r 
-                         from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-6">
+          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold bg-gradient-to-r 
+                         from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-8
+                         tracking-tight leading-[1.1]">
             Built on Proven Learning Principles
           </h2>
-          <p className="text-lg text-slate-300">
+          <p className="text-lg sm:text-xl text-slate-300/90 max-w-2xl mx-auto">
             Platform combines cutting-edge research with proven frameworks to create a transformative learning experience.
           </p>
         </motion.div>
 
-        <motion.div 
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8"
-        >
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-10">
           {principles.map((methodology, index) => (
             <motion.div
               key={index}
-              variants={cardVariants}
-              className="relative p-6 rounded-2xl border border-white/10 
-                         bg-[#030409]/80 backdrop-blur-md hover:bg-[#030409]/90 
-                         transition-colors duration-300"
+              initial={{ opacity: 0, y: 40 }}
+              whileInView={{ 
+                opacity: 1, 
+                y: 0,
+                transition: {
+                  duration: 0.8,
+                  ease: [0.23, 1, 0.32, 1],
+                  delay: index * 0.2
+                }
+              }}
+              viewport={{ once: true, margin: "-100px" }}
+              className="relative"
             >
-              {/* Methodology Header */}
-              <div className="flex items-center gap-4 mb-4">
-                <div className={`w-12 h-12 rounded-xl bg-gradient-to-r ${methodology.color}
-                                flex items-center justify-center shadow-lg`}>
-                  <methodology.icon className="w-6 h-6 text-white" />
+              <div className="relative p-8 rounded-3xl border border-white/10 
+                            bg-gradient-to-b from-white/[0.08] to-transparent
+                            backdrop-blur-md">
+                {/* Methodology Header */}
+                <div className="flex items-start gap-5 mb-6">
+                  <div className={`w-14 h-14 rounded-2xl bg-gradient-to-r ${methodology.color}
+                                 flex items-center justify-center shadow-xl`}>
+                    <methodology.icon className="w-7 h-7 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-white mb-1">
+                      {methodology.category}
+                    </h3>
+                    <p className="text-sm text-slate-400 font-medium">by {methodology.author}</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-xl font-semibold text-white">
-                    {methodology.category}
-                  </h3>
-                  <p className="text-sm text-slate-400">by {methodology.author}</p>
+
+                {/* Methodology Description */}
+                <p className="text-base text-slate-300/90 mb-8 leading-relaxed">
+                  {methodology.description}
+                </p>
+
+                {/* Principles List */}
+                <div className="space-y-5">
+                  {methodology.principles.map((principle, pIndex) => (
+                    <div
+                      key={pIndex}
+                      className="flex items-start gap-4 p-4 rounded-2xl
+                                bg-gradient-to-b from-white/[0.08] to-transparent
+                                border border-white/10"
+                    >
+                      <div className={`flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-r ${methodology.color}
+                                     flex items-center justify-center shadow-lg`}>
+                        <principle.icon className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <h4 className="text-lg font-semibold text-white mb-2">
+                          {principle.title}
+                        </h4>
+                        <p className="text-sm text-slate-300/90 leading-relaxed">
+                          {principle.description}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </div>
-
-              {/* Methodology Description */}
-              <p className="text-sm text-slate-300 mb-6 leading-relaxed">
-                {methodology.description}
-              </p>
-
-              {/* Principles List */}
-              <div className="space-y-4">
-                {methodology.principles.map((principle, pIndex) => (
-                  <motion.div
-                    key={pIndex}
-                    variants={principleVariants}
-                    className="flex items-start gap-4 p-4 rounded-xl
-                             bg-white/5 hover:bg-white/10 transition-colors duration-300
-                             border border-white/5"
-                  >
-                    <div className={`flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-r ${methodology.color}
-                                   flex items-center justify-center shadow-lg`}>
-                      <principle.icon className="w-4 h-4 text-white" />
-                    </div>
-                    <div>
-                      <h4 className="text-white font-medium mb-1">
-                        {principle.title}
-                      </h4>
-                      <p className="text-sm text-slate-300 leading-relaxed">
-                        {principle.description}
-                      </p>
-                    </div>
-                  </motion.div>
-                ))}
               </div>
             </motion.div>
           ))}
-        </motion.div>
+        </div>
       </div>
     </section>
   );
