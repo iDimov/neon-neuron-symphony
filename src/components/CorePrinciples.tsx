@@ -99,9 +99,16 @@ export const CorePrinciples = () => {
       <div className="absolute inset-0 bg-[#030409]/90" />
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#030409]/50 to-[#030409]" />
       <motion.div 
+        className="absolute inset-0 opacity-30"
+        style={{
+          background: 'radial-gradient(circle at 50% 50%, rgba(124,58,237,0.2), transparent 70%)',
+          filter: 'blur(80px)',
+        }}
+      />
+      <motion.div 
         className="absolute inset-0 opacity-20"
         style={{
-          background: 'radial-gradient(circle at 50% 50%, rgba(124,58,237,0.1), transparent 70%)',
+          background: 'radial-gradient(circle at 30% 20%, rgba(56,189,248,0.2), transparent 60%)',
           filter: 'blur(60px)',
         }}
       />
@@ -109,12 +116,20 @@ export const CorePrinciples = () => {
       <div className="container relative mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div 
           style={{ opacity, y }}
-          className="text-center max-w-3xl mx-auto mb-20"
+          className="text-center max-w-3xl mx-auto mb-24"
         >
+          <div className="inline-flex items-center justify-center px-4 py-1.5 mb-6 
+                         border border-purple-500/20 rounded-full bg-purple-500/10 
+                         backdrop-blur-sm">
+            <span className="text-sm font-medium bg-gradient-to-r from-purple-400 to-blue-400 
+                           bg-clip-text text-transparent">
+              Our Learning Philosophy
+            </span>
+          </div>
           <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold bg-gradient-to-r 
                          from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-8
                          tracking-tight leading-[1.1]">
-            Built on Proven Learning Principles
+            Learning Engineered Differently
           </h2>
           <p className="text-lg sm:text-xl text-slate-300/90 max-w-2xl mx-auto">
             Platform combines cutting-edge research with proven frameworks to create a transformative learning experience.
@@ -136,45 +151,52 @@ export const CorePrinciples = () => {
                 }
               }}
               viewport={{ once: true, margin: "-100px" }}
-              className="relative"
+              className="relative group"
             >
+              <div className="absolute -inset-[1px] bg-gradient-to-b from-white/10 via-white/5 to-transparent 
+                            rounded-[24px] blur-sm opacity-0 group-hover:opacity-100 transition-all duration-500" />
+              
               <div className="relative p-8 rounded-3xl border border-white/10 
                             bg-gradient-to-b from-white/[0.08] to-transparent
                             backdrop-blur-md">
-                {/* Methodology Header */}
-                <div className="flex items-start gap-5 mb-6">
-                  <div className={`w-14 h-14 rounded-2xl bg-gradient-to-r ${methodology.color}
-                                 flex items-center justify-center shadow-xl`}>
-                    <methodology.icon className="w-7 h-7 text-white" />
+                <div className="flex items-start gap-5 mb-8">
+                  <div className={`w-16 h-16 rounded-2xl bg-gradient-to-r ${methodology.color}
+                                 flex items-center justify-center shadow-xl
+                                 ring-1 ring-white/10 ring-inset`}>
+                    <methodology.icon className="w-8 h-8 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-2xl font-bold text-white mb-1">
+                    <h3 className="text-2xl font-bold text-white mb-1 bg-gradient-to-r from-white to-white/80 
+                                  bg-clip-text text-transparent">
                       {methodology.category}
                     </h3>
                     <p className="text-sm text-slate-400 font-medium">by {methodology.author}</p>
                   </div>
                 </div>
 
-                {/* Methodology Description */}
                 <p className="text-base text-slate-300/90 mb-8 leading-relaxed">
                   {methodology.description}
                 </p>
 
-                {/* Principles List */}
                 <div className="space-y-5">
                   {methodology.principles.map((principle, pIndex) => (
                     <div
                       key={pIndex}
-                      className="flex items-start gap-4 p-4 rounded-2xl
+                      className="group/item flex items-start gap-4 p-5 rounded-2xl
                                 bg-gradient-to-b from-white/[0.08] to-transparent
-                                border border-white/10"
+                                border border-white/[0.08] hover:border-white/[0.12]
+                                transition-colors duration-300"
                     >
-                      <div className={`flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-r ${methodology.color}
-                                     flex items-center justify-center shadow-lg`}>
+                      <div className={`flex-shrink-0 w-11 h-11 rounded-xl bg-gradient-to-r ${methodology.color}
+                                     flex items-center justify-center shadow-lg
+                                     ring-1 ring-white/10 ring-inset
+                                     group-hover/item:shadow-2xl group-hover/item:scale-[1.02] 
+                                     transition-all duration-300`}>
                         <principle.icon className="w-5 h-5 text-white" />
                       </div>
                       <div>
-                        <h4 className="text-lg font-semibold text-white mb-2">
+                        <h4 className="text-lg font-semibold text-white mb-2 bg-gradient-to-r from-white to-white/90 
+                                      bg-clip-text text-transparent">
                           {principle.title}
                         </h4>
                         <p className="text-sm text-slate-300/90 leading-relaxed">
