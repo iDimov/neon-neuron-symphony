@@ -161,55 +161,33 @@ export const CorePrinciples = () => {
               viewport={{ once: true, margin: "-100px" }}
               className="relative group"
             >
-              <div className="absolute -inset-[1px] bg-gradient-to-b from-white/10 via-white/5 to-transparent 
-                            rounded-[24px] blur-sm opacity-0 group-hover:opacity-100 transition-all duration-500" />
-              
-              {/* Book Cover Background */}
-              <div className="absolute inset-0 rounded-[24px] overflow-hidden">
-                <div className="absolute inset-0 bg-[#030409]/90 backdrop-blur-sm" />
-                <img
-                  src={methodology.cover}
-                  alt=""
-                  className="absolute inset-0 w-full h-full object-cover opacity-20 scale-110"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#030409] via-[#030409]/95 to-[#030409]/80" />
-                <div className="absolute inset-0 bg-gradient-to-r from-[#030409] via-transparent to-[#030409]" />
-              </div>
-
-              <div className="relative p-8 rounded-[2.5rem] min-h-[600px] overflow-hidden
-                            bg-[#0A0F1E] border border-white/[0.08]">
+              <div className="relative p-8 rounded-[2rem] overflow-hidden
+                            bg-[#0A0F1E]/60 backdrop-blur-sm border border-white/[0.08]
+                            hover:bg-[#0A0F1E]/80 transition-colors duration-500">
                 {/* Header with Icon */}
-                <div className="flex items-center gap-4 mb-6">
-                  <div className={`w-12 h-12 rounded-2xl bg-gradient-to-r ${methodology.color}
+                <div className="flex items-center gap-3 mb-8">
+                  <div className={`w-11 h-11 rounded-2xl bg-gradient-to-r ${methodology.color}
                                  flex items-center justify-center shadow-lg`}>
-                    <methodology.icon className="w-6 h-6 text-white" />
+                    <methodology.icon className="w-5 h-5 text-white" />
                   </div>
                   <div>
                     <h3 className="text-xl font-semibold text-white">
                       {methodology.category}
                     </h3>
-                    <p className="text-sm text-slate-400">by {methodology.author}</p>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-slate-400">by {methodology.author}</span>
+                    </div>
                   </div>
                 </div>
 
                 {/* Book Cover */}
-                <div className="relative w-full aspect-[4/3] mb-8 overflow-hidden">
-                  <div className="relative w-full h-full transform 
-                                 group-hover:scale-105
-                                 transition-all duration-500 ease-out">
-                    <img
-                      src={methodology.cover}
-                      alt={methodology.category}
-                      className="w-full h-full object-contain rounded-2xl
-                               shadow-xl"
-                    />
-                    
-                    {/* Subtle Shine Effect */}
-                    <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent
-                                   opacity-0 group-hover:opacity-100 
-                                   translate-x-full group-hover:translate-x-[-200%]
-                                   transition-all duration-1000 ease-in-out" />
-                  </div>
+                <div className="relative w-full aspect-[3/4] mb-8">
+                  <img
+                    src={methodology.cover}
+                    alt={methodology.category}
+                    className="w-full h-full object-contain rounded-xl
+                             shadow-lg hover:shadow-xl transition-shadow duration-500"
+                  />
                 </div>
 
                 {/* Description */}
@@ -222,18 +200,17 @@ export const CorePrinciples = () => {
                   {methodology.principles.map((principle, pIndex) => (
                     <div
                       key={pIndex}
-                      className="group/item flex items-start gap-4 p-4 rounded-2xl
+                      className="group/item flex items-start gap-4 p-4 rounded-xl
                                 bg-[#080B15] hover:bg-[#0C1221]
-                                border border-white/[0.02] hover:border-white/[0.08]
+                                border border-white/[0.05] hover:border-white/[0.1]
                                 transition-all duration-300"
                     >
                       <div className={`flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-r ${methodology.color}
-                                     flex items-center justify-center
-                                     group-hover/item:scale-110 transition-transform duration-300`}>
+                                     flex items-center justify-center shadow-md`}>
                         <principle.icon className="w-5 h-5 text-white" />
                       </div>
                       <div>
-                        <h4 className="text-base font-semibold text-white mb-1.5">
+                        <h4 className="text-base font-semibold text-white mb-1">
                           {principle.title}
                         </h4>
                         <p className="text-sm text-slate-400 leading-relaxed">
@@ -243,18 +220,6 @@ export const CorePrinciples = () => {
                     </div>
                   ))}
                 </div>
-
-                {/* Card Glow Effects */}
-                <div className="absolute -left-1/2 -top-1/2 w-full h-full 
-                               bg-gradient-to-r from-transparent via-white/[0.01] to-transparent
-                               blur-3xl opacity-0 group-hover:opacity-100
-                               transition-opacity duration-700
-                               pointer-events-none" />
-                <div className="absolute -right-1/2 -bottom-1/2 w-full h-full
-                               bg-gradient-to-l from-transparent via-white/[0.01] to-transparent
-                               blur-3xl opacity-0 group-hover:opacity-100
-                               transition-opacity duration-700
-                               pointer-events-none" />
               </div>
             </motion.div>
           ))}
