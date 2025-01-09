@@ -2,12 +2,18 @@ import { useRef } from 'react';
 import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
 import { Brain, BookOpen, Rocket, Zap, Target, Heart, Lightbulb, Database, Repeat, Leaf } from 'lucide-react';
 
+// Import book covers
+import l2Cover from '../images/l2-cover.png';
+import brainCover from '../images/2brain.jpg';
+import habitsCover from '../images/atomic-habits.jpg';
+
 const principles = [
   {
     category: "Language Acquisition",
     author: "Stephen Krashen",
     icon: BookOpen,
     color: "from-cyan-400 to-blue-500",
+    cover: l2Cover,
     description: "Innovative framework and a stress-free approach to mastering language that prioritizes real-world fluency over traditional (grammar, quizzes) studying",
     principles: [
       {
@@ -32,6 +38,7 @@ const principles = [
     author: "Tiago Forte",
     icon: Database,
     color: "from-violet-400 to-purple-500",
+    cover: brainCover,
     description: "Modern approach to complements your biological brain, enabling you to enhance creativity, efficiency, and overall personal and professional growth",
     principles: [
       {
@@ -56,6 +63,7 @@ const principles = [
     author: "James Clear",
     icon: Repeat,
     color: "from-blue-400 to-indigo-500",
+    cover: habitsCover,
     description: "Framework for building consistent learning habits that stick. Essential for long-term success in language learning, especially for busy IT professionals.",
     principles: [
       {
@@ -156,56 +164,97 @@ export const CorePrinciples = () => {
               <div className="absolute -inset-[1px] bg-gradient-to-b from-white/10 via-white/5 to-transparent 
                             rounded-[24px] blur-sm opacity-0 group-hover:opacity-100 transition-all duration-500" />
               
-              <div className="relative p-8 rounded-3xl border border-white/10 
-                            bg-gradient-to-b from-white/[0.08] to-transparent
-                            backdrop-blur-md">
-                <div className="flex items-start gap-5 mb-8">
-                  <div className={`w-16 h-16 rounded-2xl bg-gradient-to-r ${methodology.color}
-                                 flex items-center justify-center shadow-xl
-                                 ring-1 ring-white/10 ring-inset`}>
-                    <methodology.icon className="w-8 h-8 text-white" />
+              {/* Book Cover Background */}
+              <div className="absolute inset-0 rounded-[24px] overflow-hidden">
+                <div className="absolute inset-0 bg-[#030409]/90 backdrop-blur-sm" />
+                <img
+                  src={methodology.cover}
+                  alt=""
+                  className="absolute inset-0 w-full h-full object-cover opacity-20 scale-110"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#030409] via-[#030409]/95 to-[#030409]/80" />
+                <div className="absolute inset-0 bg-gradient-to-r from-[#030409] via-transparent to-[#030409]" />
+              </div>
+
+              <div className="relative p-8 rounded-[2.5rem] min-h-[600px] overflow-hidden
+                            bg-[#0A0F1E] border border-white/[0.08]">
+                {/* Header with Icon */}
+                <div className="flex items-center gap-4 mb-6">
+                  <div className={`w-12 h-12 rounded-2xl bg-gradient-to-r ${methodology.color}
+                                 flex items-center justify-center shadow-lg`}>
+                    <methodology.icon className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-2xl font-bold text-white mb-1 bg-gradient-to-r from-white to-white/80 
-                                  bg-clip-text text-transparent">
+                    <h3 className="text-xl font-semibold text-white">
                       {methodology.category}
                     </h3>
-                    <p className="text-sm text-slate-400 font-medium">by {methodology.author}</p>
+                    <p className="text-sm text-slate-400">by {methodology.author}</p>
                   </div>
                 </div>
 
+                {/* Book Cover */}
+                <div className="relative w-full aspect-[4/3] mb-8 overflow-hidden">
+                  <div className="relative w-full h-full transform 
+                                 group-hover:scale-105
+                                 transition-all duration-500 ease-out">
+                    <img
+                      src={methodology.cover}
+                      alt={methodology.category}
+                      className="w-full h-full object-contain rounded-2xl
+                               shadow-xl"
+                    />
+                    
+                    {/* Subtle Shine Effect */}
+                    <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent
+                                   opacity-0 group-hover:opacity-100 
+                                   translate-x-full group-hover:translate-x-[-200%]
+                                   transition-all duration-1000 ease-in-out" />
+                  </div>
+                </div>
+
+                {/* Description */}
                 <p className="text-base text-slate-300/90 mb-8 leading-relaxed">
                   {methodology.description}
                 </p>
 
-                <div className="space-y-5">
+                {/* Principles List */}
+                <div className="space-y-4">
                   {methodology.principles.map((principle, pIndex) => (
                     <div
                       key={pIndex}
-                      className="group/item flex items-start gap-4 p-5 rounded-2xl
-                                bg-gradient-to-b from-white/[0.08] to-transparent
-                                border border-white/[0.08] hover:border-white/[0.12]
-                                transition-colors duration-300"
+                      className="group/item flex items-start gap-4 p-4 rounded-2xl
+                                bg-[#080B15] hover:bg-[#0C1221]
+                                border border-white/[0.02] hover:border-white/[0.08]
+                                transition-all duration-300"
                     >
-                      <div className={`flex-shrink-0 w-11 h-11 rounded-xl bg-gradient-to-r ${methodology.color}
-                                     flex items-center justify-center shadow-lg
-                                     ring-1 ring-white/10 ring-inset
-                                     group-hover/item:shadow-2xl group-hover/item:scale-[1.02] 
-                                     transition-all duration-300`}>
+                      <div className={`flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-r ${methodology.color}
+                                     flex items-center justify-center
+                                     group-hover/item:scale-110 transition-transform duration-300`}>
                         <principle.icon className="w-5 h-5 text-white" />
                       </div>
                       <div>
-                        <h4 className="text-lg font-semibold text-white mb-2 bg-gradient-to-r from-white to-white/90 
-                                      bg-clip-text text-transparent">
+                        <h4 className="text-base font-semibold text-white mb-1.5">
                           {principle.title}
                         </h4>
-                        <p className="text-sm text-slate-300/90 leading-relaxed">
+                        <p className="text-sm text-slate-400 leading-relaxed">
                           {principle.description}
                         </p>
                       </div>
                     </div>
                   ))}
                 </div>
+
+                {/* Card Glow Effects */}
+                <div className="absolute -left-1/2 -top-1/2 w-full h-full 
+                               bg-gradient-to-r from-transparent via-white/[0.01] to-transparent
+                               blur-3xl opacity-0 group-hover:opacity-100
+                               transition-opacity duration-700
+                               pointer-events-none" />
+                <div className="absolute -right-1/2 -bottom-1/2 w-full h-full
+                               bg-gradient-to-l from-transparent via-white/[0.01] to-transparent
+                               blur-3xl opacity-0 group-hover:opacity-100
+                               transition-opacity duration-700
+                               pointer-events-none" />
               </div>
             </motion.div>
           ))}
