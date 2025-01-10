@@ -16,7 +16,7 @@ const methods = [
     cover: l2Cover,
     principles: [
       {
-        title: "Comprehensible Input in Context",
+        title: "Comprehensible Input",
         icon: Brain,
         description: "Language is introduced through everyday experiences like storytelling, conversations, and real-world interactions.",
       },
@@ -170,7 +170,7 @@ const BookCard = ({ method, index }) => {
           <div className="absolute inset-0 w-full h-full backface-hidden rotateY-180">
             <div className="w-full h-full rounded-3xl bg-[#0A0F1E] p-8">
               {/* Principles List */}
-              <div className="space-y-10">
+              <div className="space-y-8">
                 {method.principles.map((principle, idx) => (
                   <motion.div
                     key={idx}
@@ -183,25 +183,23 @@ const BookCard = ({ method, index }) => {
                     }}
                     className="group"
                   >
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className={`w-8 h-8 rounded-xl bg-gradient-to-r ${method.color} 
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className={`flex-shrink-0 w-7 h-7 rounded-lg bg-gradient-to-r ${method.color} 
                                     flex items-center justify-center
                                     shadow-lg shadow-${method.color.split('-')[2]}-500/20
                                     group-hover:shadow-${method.color.split('-')[2]}-500/30
                                     transition-all duration-300`}>
-                        <principle.icon className="w-4 h-4 text-white" />
+                        <principle.icon className="w-3.5 h-3.5 text-white" />
                       </div>
-                      <h4 className="text-xl font-semibold bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent
+                      <h4 className="text-lg font-semibold bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent
                                    group-hover:to-white transition-all duration-300">
                         {principle.title}
                       </h4>
                     </div>
-                    <div className="ml-11">
-                      <p className="text-slate-400 text-base leading-relaxed
-                                  group-hover:text-slate-300 transition-all duration-300">
-                        {principle.description}
-                      </p>
-                    </div>
+                    <p className="text-slate-400 text-base leading-relaxed mt-2
+                                group-hover:text-slate-300 transition-all duration-300">
+                      {principle.description}
+                    </p>
                   </motion.div>
                 ))}
               </div>
