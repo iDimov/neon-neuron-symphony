@@ -168,48 +168,43 @@ const BookCard = ({ method, index }) => {
 
           {/* Back - Principles */}
           <div className="absolute inset-0 w-full h-full backface-hidden rotateY-180">
-            <div className="w-full h-full rounded-3xl bg-[#0A0F1E]/90 backdrop-blur-sm p-8 flex flex-col
-                          border border-slate-800 shadow-xl">
-              <div className="mb-6">
+            <div className="w-full h-full rounded-3xl bg-[#0A0F1E] p-8">
+              {/* Header with Icon */}
+              <div className="flex items-center gap-3 mb-3">
                 <div className={`w-12 h-12 rounded-2xl bg-gradient-to-r ${method.color}
-                              flex items-center justify-center mb-4`}>
+                              flex items-center justify-center`}>
                   <method.icon className="w-6 h-6 text-white" />
                 </div>
-                <h3 className="text-2xl font-semibold text-white mb-2">Core Principles</h3>
-                <p className="text-slate-400">Key concepts from {method.title}</p>
-              </div>
-              
-              <div className="flex-1">
-                <div className="space-y-6">
-                  {method.principles.map((principle, idx) => (
-                    <motion.div
-                      key={idx}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: isFlipped ? 1 : 0, x: isFlipped ? 0 : -20 }}
-                      transition={{ delay: 0.3 + idx * 0.1 }}
-                      className="flex items-start gap-4 p-3 rounded-2xl
-                                bg-[#080B15] hover:bg-[#0C1221]
-                                border border-white/[0.02]
-                                transition-colors duration-300"
-                    >
-                      <div className={`flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-r ${method.color}
-                                   flex items-center justify-center`}>
-                        <principle.icon className="w-5 h-5 text-white" />
-                      </div>
-                      <div>
-                        <h4 className="text-base font-semibold text-white mb-1">{principle.title}</h4>
-                        <p className="text-sm text-slate-400 leading-relaxed">{principle.description}</p>
-                      </div>
-                    </motion.div>
-                  ))}
+                <div>
+                  <h3 className="text-2xl font-semibold text-white">Core Principles</h3>
+                  <p className="text-slate-400 text-sm">Key concepts from {method.title}</p>
                 </div>
               </div>
               
-              <div className="mt-auto pt-6 border-t border-slate-800">
-                <div className="flex items-center gap-2 text-sm text-slate-400">
-                  <method.icon className="w-4 h-4" />
-                  <span>Hover to flip back</span>
-                </div>
+              {/* Principles List */}
+              <div className="mt-8 space-y-6">
+                {method.principles.map((principle, idx) => (
+                  <motion.div
+                    key={idx}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: isFlipped ? 1 : 0, y: isFlipped ? 0 : 10 }}
+                    transition={{ delay: 0.2 + idx * 0.1 }}
+                    className="flex items-start gap-4"
+                  >
+                    <div className={`flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-r ${method.color}
+                                 flex items-center justify-center`}>
+                      <principle.icon className="w-5 h-5 text-white" />
+                    </div>
+                    <div className="flex-1 -mt-1">
+                      <h4 className="text-lg font-semibold text-white mb-1">
+                        {principle.title}
+                      </h4>
+                      <p className="text-slate-400 text-base leading-relaxed">
+                        {principle.description}
+                      </p>
+                    </div>
+                  </motion.div>
+                ))}
               </div>
             </div>
           </div>
