@@ -10,6 +10,7 @@ const methods = [
     title: "Language Acquisition",
     author: "Stephen Krashen",
     icon: BookOpen,
+    description: "Innovative framework and a stress-free approach to mastering language that prioritizes real-world fluency over traditional (grammar, quizzes) studying",  
     color: "from-cyan-400 to-blue-500",
     cover: l2Cover,
     keyPoints: ["Real-world fluency", "Natural progression", "Stress-free environment"]
@@ -18,6 +19,7 @@ const methods = [
     title: "Second Brain",
     author: "Tiago Forte",
     icon: Database,
+    description: "A digital organization system that helps you capture, process, and retrieve information from your brain, making it more efficient and creative.",
     color: "from-violet-400 to-purple-500",
     cover: brainCover,
     keyPoints: ["Digital organization", "Knowledge flow", "Enhanced creativity"]
@@ -26,6 +28,7 @@ const methods = [
     title: "Atomic Habits",
     author: "James Clear",
     icon: Repeat,
+    description: "A practical guide to breaking bad habits and forming good ones, based on the science of habit formation.",
     color: "from-blue-400 to-indigo-500",
     cover: habitsCover,
     keyPoints: ["Small improvements", "Sustainable routines", "Identity-based change"]
@@ -81,47 +84,48 @@ export const CorePrinciplesAlt = () => {
                 viewport={{ once: true }}
                 className="group"
               >
-                <div className="relative h-full p-6 rounded-2xl bg-[#0A0F1E]/60 
-                              border border-white/[0.05] backdrop-blur-sm
-                              hover:bg-[#0A0F1E]/80 transition-all duration-300">
-                  {/* Book Preview */}
-                  <div className="relative w-full aspect-[3/4] mb-6 rounded-xl overflow-hidden">
+                <div className="relative h-full rounded-3xl overflow-hidden">
+                  {/* Book Cover - Full Width */}
+                  <div className="relative w-full aspect-[3/4]">
                     <img
                       src={method.cover}
                       alt={method.title}
-                      className="w-full h-full object-cover transition-transform duration-700
-                               group-hover:scale-105"
+                      className="w-full h-full object-cover"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#0A0F1E] via-transparent to-transparent" />
                   </div>
 
-                  {/* Content */}
-                  <div className="relative">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className={`w-10 h-10 rounded-xl bg-gradient-to-r ${method.color}
+                  {/* Content Overlay */}
+                  <div className="absolute inset-0 flex flex-col justify-end
+                                bg-gradient-to-t from-[#0A0F1E] via-[#0A0F1E]/95 to-transparent">
+                    <div className="p-6">
+                      {/* Title Section */}
+                      <div className="flex items-center gap-3 mb-5">
+                        <div className={`w-10 h-10 rounded-xl bg-gradient-to-r ${method.color}
                                     flex items-center justify-center`}>
-                        <method.icon className="w-5 h-5 text-white" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-semibold text-white">
-                          {method.title}
-                        </h3>
-                        <p className="text-sm text-slate-400">by {method.author}</p>
-                      </div>
-                    </div>
-
-                    {/* Key Points */}
-                    <div className="flex flex-wrap gap-2">
-                      {method.keyPoints.map((point, idx) => (
-                        <div
-                          key={idx}
-                          className="px-3 py-1 text-sm rounded-full
-                                   bg-white/[0.03] text-slate-300
-                                   border border-white/[0.05]"
-                        >
-                          {point}
+                          <method.icon className="w-5 h-5 text-white" />
                         </div>
-                      ))}
+                        <div>
+                          <h3 className="text-lg font-semibold text-white">
+                            {method.title}
+                          </h3>
+                          <p className="text-sm text-slate-400">by {method.author}</p>
+                        </div>
+                      </div>
+
+                      {/* Core Ideas */}
+                      <div className="space-y-2.5">
+                        {/* {method.keyPoints.map((point, idx) => (
+                          <div
+                            key={idx}
+                            className="flex items-center gap-2.5 text-sm text-slate-300
+                                     transition-colors duration-300 group-hover:text-white"
+                          >
+                            <div className={`w-1.5 h-1.5 rounded-full bg-gradient-to-r ${method.color}`} />
+                            {point}
+                          </div>
+                        ))} */}
+                        {method.description}
+                      </div>
                     </div>
                   </div>
                 </div>
