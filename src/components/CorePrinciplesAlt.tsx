@@ -222,27 +222,72 @@ export const CorePrinciplesAlt = () => {
   const y = useSpring(useTransform(scrollYProgress, [0, 0.2], [40, 0]));
 
   return (
-    <section ref={containerRef} className="relative py-24 overflow-hidden bg-[#030409]">
-      <div className="container relative mx-auto px-4 sm:px-6 lg:px-8">
+    <section ref={containerRef} className="relative py-32 overflow-hidden bg-[#030409]">
+      {/* Background Effects */}
+      <div className="absolute inset-0 bg-[#030409]" />
+      <div className="absolute inset-0 bg-gradient-to-b from-purple-500/5 via-transparent to-transparent" />
+      <motion.div 
+        className="absolute top-0 left-1/4 w-96 h-96 -translate-x-1/2 -translate-y-1/2"
+        style={{
+          background: 'radial-gradient(circle, rgba(168,85,247,0.05) 0%, rgba(168,85,247,0.01) 50%, transparent 70%)',
+          filter: 'blur(40px)',
+        }}
+      />
+      <motion.div 
+        className="absolute bottom-0 right-1/4 w-96 h-96 translate-x-1/2 translate-y-1/2"
+        style={{
+          background: 'radial-gradient(circle, rgba(59,130,246,0.05) 0%, rgba(59,130,246,0.01) 50%, transparent 70%)',
+          filter: 'blur(40px)',
+        }}
+      />
+      
+      <div className="container relative mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
         <motion.div 
           style={{ opacity, y }}
-          className="max-w-6xl mx-auto"
+          className="mx-auto"
         >
           {/* Header */}
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center justify-center px-4 py-1.5 mb-6 
-                           border border-purple-500/20 rounded-full bg-purple-500/10">
-              <span className="text-sm font-medium text-purple-400">
+          <div className="text-center mb-20">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              viewport={{ once: true }}
+              className="inline-flex items-center justify-center px-4 py-1.5 mb-6 
+                        border border-purple-500/20 rounded-full bg-purple-500/10
+                        shadow-[0_0_20px_rgba(168,85,247,0.1)]"
+            >
+              <span className="text-sm font-medium bg-gradient-to-r from-purple-400 to-purple-300 bg-clip-text text-transparent">
                 Our Learning Philosophy
               </span>
-            </div>
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-              Learning Engineered <span className="text-purple-400">Differently</span>
-            </h2>
+            </motion.div>
+            <motion.h2 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.3 }}
+              viewport={{ once: true }}
+              className="text-4xl md:text-5xl font-bold mb-6 tracking-tight"
+            >
+              <span className="bg-gradient-to-r from-white to-white/90 bg-clip-text text-transparent">
+                Learning Engineered
+              </span>{" "}
+              <span className="bg-gradient-to-r from-purple-400 to-purple-500 bg-clip-text text-transparent">
+                Differently
+              </span>
+            </motion.h2>
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.4 }}
+              viewport={{ once: true }}
+              className="text-lg text-slate-400 max-w-2xl mx-auto"
+            >
+              Platform combines cutting-edge research with proven frameworks to create a transformative learning experience.
+            </motion.p>
           </div>
 
           {/* Methods Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12">
             {methods.map((method, index) => (
               <BookCard key={index} method={method} index={index} />
             ))}
