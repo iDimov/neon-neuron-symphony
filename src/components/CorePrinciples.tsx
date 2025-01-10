@@ -124,11 +124,10 @@ export const CorePrinciples = () => {
       <div className="container relative mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div 
           style={{ opacity, y }}
-          className="text-center max-w-3xl mx-auto mb-24"
+          className="text-center max-w-3xl mx-auto mb-20"
         >
           <div className="inline-flex items-center justify-center px-4 py-1.5 mb-6 
-                         border border-purple-500/20 rounded-full bg-purple-500/10 
-                         backdrop-blur-sm">
+                         border border-purple-500/20 rounded-full bg-purple-500/10">
             <span className="text-sm font-medium bg-gradient-to-r from-purple-400 to-blue-400 
                            bg-clip-text text-transparent">
               Our Learning Philosophy
@@ -144,7 +143,7 @@ export const CorePrinciples = () => {
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-10">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-[1200px] mx-auto">
           {principles.map((methodology, index) => (
             <motion.div
               key={index}
@@ -155,58 +154,53 @@ export const CorePrinciples = () => {
                 transition: {
                   duration: 0.8,
                   ease: [0.23, 1, 0.32, 1],
-                  delay: index * 0.2
+                  delay: index * 0.1
                 }
               }}
               viewport={{ once: true, margin: "-100px" }}
-              className="relative group"
+              className="relative"
             >
-              <div className="relative p-8 rounded-[2rem] overflow-hidden
-                            bg-[#0A0F1E]/60 backdrop-blur-sm border border-white/[0.08]
-                            hover:bg-[#0A0F1E]/80 transition-colors duration-500">
-                {/* Header with Icon */}
-                <div className="flex items-center gap-3 mb-8">
-                  <div className={`w-11 h-11 rounded-2xl bg-gradient-to-r ${methodology.color}
-                                 flex items-center justify-center shadow-lg`}>
+              <div className="relative p-6 rounded-[28px] bg-[#0A0F1E]/90 border border-white/[0.03]">
+                {/* Book Cover */}
+                <div className="relative aspect-[3/4] mb-6">
+                  <img
+                    src={methodology.cover}
+                    alt={methodology.category}
+                    className="w-full h-full object-cover rounded-2xl"
+                  />
+                </div>
+
+                {/* Title and Author */}
+                <div className="flex items-center gap-3 mb-4">
+                  <div className={`flex-shrink-0 w-11 h-11 rounded-2xl bg-gradient-to-r ${methodology.color}
+                               flex items-center justify-center`}>
                     <methodology.icon className="w-5 h-5 text-white" />
                   </div>
                   <div>
                     <h3 className="text-xl font-semibold text-white">
                       {methodology.category}
                     </h3>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-slate-400">by {methodology.author}</span>
-                    </div>
+                    <p className="text-sm text-slate-400">by {methodology.author}</p>
                   </div>
                 </div>
 
-                {/* Book Cover */}
-                <div className="relative w-full aspect-[3/4] mb-8">
-                  <img
-                    src={methodology.cover}
-                    alt={methodology.category}
-                    className="w-full h-full object-contain rounded-xl
-                             shadow-lg hover:shadow-xl transition-shadow duration-500"
-                  />
-                </div>
-
                 {/* Description */}
-                <p className="text-base text-slate-300/90 mb-8 leading-relaxed">
+                <p className="text-base text-slate-300/90 leading-relaxed mb-6">
                   {methodology.description}
                 </p>
 
                 {/* Principles List */}
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {methodology.principles.map((principle, pIndex) => (
                     <div
                       key={pIndex}
-                      className="group/item flex items-start gap-4 p-4 rounded-xl
+                      className="flex items-start gap-3 p-3 rounded-2xl
                                 bg-[#080B15] hover:bg-[#0C1221]
-                                border border-white/[0.05] hover:border-white/[0.1]
-                                transition-all duration-300"
+                                border border-white/[0.02]
+                                transition-colors duration-300"
                     >
                       <div className={`flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-r ${methodology.color}
-                                     flex items-center justify-center shadow-md`}>
+                                   flex items-center justify-center`}>
                         <principle.icon className="w-5 h-5 text-white" />
                       </div>
                       <div>
