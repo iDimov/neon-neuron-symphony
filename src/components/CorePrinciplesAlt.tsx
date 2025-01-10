@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { motion, useScroll, useTransform, useSpring, AnimatePresence } from 'framer-motion';
-import { Brain, BookOpen, Rocket, Zap, Target, Heart, Lightbulb, Database, Repeat } from 'lucide-react';
+import { Brain, BookOpen, Rocket, Zap, Target, Heart, Lightbulb, Database, Repeat, Leaf } from 'lucide-react';
 import l2Cover from '../images/l2-cover.png';
 import brainCover from '../images/2brain.jpg';
 import habitsCover from '../images/atomic-habits.jpg';
@@ -14,7 +14,23 @@ const methods = [
     description: "Innovative framework and a stress-free approach to mastering language that prioritizes real-world fluency over traditional (grammar, quizzes) studying",  
     color: "from-cyan-400 to-blue-500",
     cover: l2Cover,
-    keyPoints: ["Real-world fluency", "Natural progression", "Stress-free environment"]
+    principles: [
+      {
+        title: "Comprehensible Input in Context",
+        icon: Brain,
+        description: "Language is introduced through everyday experiences like storytelling, conversations, and real-world interactions.",
+      },
+      {
+        title: "Organic Learning Flow",
+        icon: Leaf,
+        description: "Acquire language step-by-step, in a progression that just makes sense.",
+      },
+      {
+        title: "Stress-Free Learning",
+        icon: Heart,
+        description: "Lower stress, higher engagement. A comfortable, enjoyable and low-anxiety environment boosts receptivity and retention.",
+      }
+    ]
   },
   {
     title: "Second Brain",
@@ -23,7 +39,23 @@ const methods = [
     description: "A digital organization system that helps you capture, process, and retrieve information from your brain, making it more efficient and creative.",
     color: "from-violet-400 to-purple-500",
     cover: brainCover,
-    keyPoints: ["Digital organization", "Knowledge flow", "Enhanced creativity"]
+    principles: [
+      {
+        title: "PARA Method",
+        icon: Target,
+        description: "Digital life into Projects, Areas, Resources, and Archives. Keep everything structured for easy access and focus on what matters most",
+      },
+      {
+        title: "CODE Methodology",
+        icon: Zap,
+        description: "Capture, Organize, Distill, Express - knowledge flow. Systematic approach ensures no valuable moment is lost.",
+      },
+      {
+        title: "Improved Learning",
+        icon: Lightbulb,
+        description: "Enables meaningful understanding and long-term knowledge retention by organizing insights and summaries tailored for practical application.",
+      }
+    ]
   },
   {
     title: "Atomic Habits",
@@ -32,7 +64,23 @@ const methods = [
     description: "A practical guide to breaking bad habits and forming good ones, based on the science of habit formation.",
     color: "from-blue-400 to-indigo-500",
     cover: habitsCover,
-    keyPoints: ["Small improvements", "Sustainable routines", "Identity-based change"]
+    principles: [
+      {
+        title: "1% Better Every Day",
+        icon: Target,
+        description: "Small improvements compound into remarkable results. Consistent, tiny steps lead to massive progress over time.",
+      },
+      {
+        title: "Four Laws of Behavior Change",
+        icon: Brain,
+        description: "Make it obvious, attractive, easy, and satisfying. This formula creates sustainable learning habits that fit into your daily routine.",
+      },
+      {
+        title: "Identity-Based Habits",
+        icon: Heart,
+        description: "Focus on who you want to become, not what you want to achieve. This mindset shift makes learning English a natural part of your identity.",
+      }
+    ]
   }
 ];
 
@@ -71,7 +119,7 @@ const BookCard = ({ method, index }) => {
           {/* Front - Book Cover & Description */}
           <div className="absolute inset-0 w-full h-full backface-hidden">
             <div className="w-full h-full rounded-3xl overflow-hidden shadow-xl">
-              <div className="relative w-full h-3/5">
+              <div className="relative w-full h-4/5">
                 <img
                   src={method.cover}
                   alt={method.title}
@@ -80,7 +128,7 @@ const BookCard = ({ method, index }) => {
                 
                 {/* Title Overlay */}
                 <div className="absolute bottom-0 left-0 right-0 p-6
-                              bg-gradient-to-t from-[#0A0F1E] via-[#0A0F1E]/95 to-transparent">
+                              bg-gradient-to-t from-[#0A0F1E]/80 via-[#0A0F1E]/50 to-transparent">
                   <div className="flex items-center gap-3">
                     <div className={`w-10 h-10 rounded-xl bg-gradient-to-r ${method.color}
                                   flex items-center justify-center`}>
@@ -97,9 +145,9 @@ const BookCard = ({ method, index }) => {
               </div>
 
               {/* Description Section */}
-              <div className="h-2/5 bg-[#0A0F1E] p-6">
-                <p className="text-slate-300 line-clamp-4">{method.description}</p>
-                <div className="absolute bottom-6 right-6">
+              <div className="h-1/5 bg-[#0A0F1E]/80 backdrop-blur-sm p-6 relative">
+                <p className="text-slate-300 text-sm line-clamp-2">{method.description}</p>
+                <div className="absolute bottom-4 right-6">
                   <div className="text-sm text-slate-400 flex items-center gap-2">
                     <span>View principles</span>
                     <motion.div
@@ -120,7 +168,7 @@ const BookCard = ({ method, index }) => {
 
           {/* Back - Principles */}
           <div className="absolute inset-0 w-full h-full backface-hidden rotateY-180">
-            <div className="w-full h-full rounded-3xl bg-[#0A0F1E] p-8 flex flex-col
+            <div className="w-full h-full rounded-3xl bg-[#0A0F1E]/90 backdrop-blur-sm p-8 flex flex-col
                           border border-slate-800 shadow-xl">
               <div className="mb-6">
                 <div className={`w-12 h-12 rounded-2xl bg-gradient-to-r ${method.color}
@@ -133,17 +181,24 @@ const BookCard = ({ method, index }) => {
               
               <div className="flex-1">
                 <div className="space-y-6">
-                  {method.keyPoints.map((point, idx) => (
+                  {method.principles.map((principle, idx) => (
                     <motion.div
                       key={idx}
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: isFlipped ? 1 : 0, x: isFlipped ? 0 : -20 }}
                       transition={{ delay: 0.3 + idx * 0.1 }}
-                      className="flex items-start gap-4"
+                      className="flex items-start gap-4 p-3 rounded-2xl
+                                bg-[#080B15] hover:bg-[#0C1221]
+                                border border-white/[0.02]
+                                transition-colors duration-300"
                     >
-                      <div className={`w-2 h-2 rounded-full bg-gradient-to-r ${method.color} mt-2`} />
+                      <div className={`flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-r ${method.color}
+                                   flex items-center justify-center`}>
+                        <principle.icon className="w-5 h-5 text-white" />
+                      </div>
                       <div>
-                        <h4 className="text-lg font-medium text-white">{point}</h4>
+                        <h4 className="text-base font-semibold text-white mb-1">{principle.title}</h4>
+                        <p className="text-sm text-slate-400 leading-relaxed">{principle.description}</p>
                       </div>
                     </motion.div>
                   ))}
