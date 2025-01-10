@@ -169,32 +169,39 @@ const BookCard = ({ method, index }) => {
           {/* Back - Principles */}
           <div className="absolute inset-0 w-full h-full backface-hidden rotateY-180">
             <div className="w-full h-full rounded-3xl bg-[#0A0F1E] p-8">
-              {/* Header */}
-              {/* <div className="flex items-center gap-3 mb-8">
-                <div className={`w-12 h-12 rounded-2xl bg-gradient-to-r ${method.color}
-                              flex items-center justify-center`}>
-                  <method.icon className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-2xl font-semibold text-white">{method.title}</h3>
-                </div>
-              </div> */}
-              
               {/* Principles List */}
-              <div className="space-y-8">
+              <div className="space-y-10">
                 {method.principles.map((principle, idx) => (
                   <motion.div
                     key={idx}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: isFlipped ? 1 : 0, y: isFlipped ? 0 : 10 }}
-                    transition={{ delay: 0.2 + idx * 0.1 }}
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: isFlipped ? 1 : 0, y: isFlipped ? 0 : 15 }}
+                    transition={{ 
+                      delay: 0.2 + idx * 0.1,
+                      duration: 0.5,
+                      ease: [0.23, 1, 0.32, 1]
+                    }}
+                    className="group"
                   >
-                    <h4 className="text-xl font-semibold text-white mb-2">
-                      {principle.title}
-                    </h4>
-                    <p className="text-slate-400 text-base leading-relaxed">
-                      {principle.description}
-                    </p>
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className={`w-8 h-8 rounded-xl bg-gradient-to-r ${method.color} 
+                                    flex items-center justify-center
+                                    shadow-lg shadow-${method.color.split('-')[2]}-500/20
+                                    group-hover:shadow-${method.color.split('-')[2]}-500/30
+                                    transition-all duration-300`}>
+                        <principle.icon className="w-4 h-4 text-white" />
+                      </div>
+                      <h4 className="text-xl font-semibold bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent
+                                   group-hover:to-white transition-all duration-300">
+                        {principle.title}
+                      </h4>
+                    </div>
+                    <div className="ml-11">
+                      <p className="text-slate-400 text-base leading-relaxed
+                                  group-hover:text-slate-300 transition-all duration-300">
+                        {principle.description}
+                      </p>
+                    </div>
                   </motion.div>
                 ))}
               </div>
