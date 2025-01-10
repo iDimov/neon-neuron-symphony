@@ -253,34 +253,43 @@ export const CorePrinciplesAlt = () => {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
               viewport={{ once: true }}
-              className="inline-flex items-center justify-center px-4 py-1.5 mb-6 
-                        border border-purple-500/20 rounded-full bg-purple-500/10"
+              className="inline-flex items-center justify-center px-4 py-1.5 mb-8
+                        border border-purple-500/20 rounded-full bg-[#1A103C]"
             >
-              <Lightbulb className="w-4 h-4 mr-2 text-purple-300" />
-              <span className="text-sm font-medium text-purple-300">
+              <Brain className="w-4 h-4 mr-2 text-purple-400" />
+              <span className="text-sm font-medium bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
                 Core Learning Principles
               </span>
             </motion.div>
-            <motion.h2 
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.3 }}
-              viewport={{ once: true }}
-              className="text-3xl md:text-4xl font-bold mb-6 tracking-tight"
-            >
-              <span className="bg-gradient-to-r from-white via-slate-200 to-white bg-clip-text text-transparent">
-              Scientific Principles, Natural Results
-              </span>
-            </motion.h2>
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.4 }}
-              viewport={{ once: true }}
-              className="text-base md:text-lg text-slate-400 max-w-2xl mx-auto"
-            >
-              Built on proven research that revolutionizes how IT professionals master English
-            </motion.p>
+
+            <div className="max-w-4xl mx-auto">
+              <motion.h2 
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.3 }}
+                viewport={{ once: true }}
+                className="text-4xl md:text-5xl lg:text-6xl font-bold mb-8 tracking-tight leading-[1.15]"
+              >
+                <span className="inline-block bg-gradient-to-r from-white via-slate-200 to-purple-100 bg-clip-text text-transparent">
+                  Scientific Principles
+                </span>
+                <br />
+                <span className="inline-block bg-gradient-to-r from-purple-400 via-blue-500 to-cyan-400 bg-clip-text text-transparent">
+                  Practical Mastery
+                </span>
+              </motion.h2>
+
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.4 }}
+                viewport={{ once: true }}
+                className="text-lg md:text-xl bg-gradient-to-r from-slate-400 via-slate-300 to-slate-400 
+                          bg-clip-text text-transparent max-w-2xl mx-auto font-medium leading-relaxed"
+              >
+                Built on proven research that revolutionizes how IT professionals master English
+              </motion.p>
+            </div>
           </div>
 
           {/* Methods Grid */}
