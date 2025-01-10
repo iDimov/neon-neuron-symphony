@@ -146,7 +146,7 @@ const BookCard = ({ method, index }) => {
 
               {/* Description Section */}
               <div className="h-1/5 bg-[#0A0F1E]/80 backdrop-blur-sm p-6 relative">
-                <p className="text-slate-300 text-sm line-clamp-2">{method.description}</p>
+                <p className="text-slate-300 text-base line-clamp-2">{method.description}</p>
                 <div className="absolute bottom-4 right-6">
                   <div className="text-sm text-slate-400 flex items-center gap-2">
                     <span>View principles</span>
