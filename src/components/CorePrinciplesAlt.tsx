@@ -254,11 +254,11 @@ export const CorePrinciplesAlt = () => {
               transition={{ duration: 0.8, delay: 0.2 }}
               viewport={{ once: true }}
               className="inline-flex items-center justify-center px-4 py-1.5 mb-6 
-                        border border-purple-500/20 rounded-full bg-purple-500/10
-                        shadow-[0_0_20px_rgba(168,85,247,0.1)]"
+                        border border-purple-500/20 rounded-full bg-purple-500/10"
             >
-              <span className="text-sm font-medium bg-gradient-to-r from-purple-400 to-purple-300 bg-clip-text text-transparent">
-                Our Learning Philosophy
+              <Lightbulb className="w-4 h-4 mr-2 text-purple-300" />
+              <span className="text-sm font-medium text-purple-300">
+                Core Learning Principles
               </span>
             </motion.div>
             <motion.h2 
@@ -266,13 +266,10 @@ export const CorePrinciplesAlt = () => {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.3 }}
               viewport={{ once: true }}
-              className="text-4xl md:text-5xl font-bold mb-6 tracking-tight"
+              className="text-3xl md:text-4xl font-bold mb-6 tracking-tight"
             >
-              <span className="bg-gradient-to-r from-white to-white/90 bg-clip-text text-transparent">
-                Learning Engineered
-              </span>{" "}
-              <span className="bg-gradient-to-r from-purple-400 to-purple-500 bg-clip-text text-transparent">
-                Differently
+              <span className="bg-gradient-to-r from-white via-slate-200 to-white bg-clip-text text-transparent">
+              Scientific Principles, Natural Results
               </span>
             </motion.h2>
             <motion.p
@@ -280,9 +277,9 @@ export const CorePrinciplesAlt = () => {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.4 }}
               viewport={{ once: true }}
-              className="text-lg text-slate-400 max-w-2xl mx-auto"
+              className="text-base md:text-lg text-slate-400 max-w-2xl mx-auto"
             >
-              Platform combines cutting-edge research with proven frameworks to create a transformative learning experience.
+              Built on proven research that revolutionizes how IT professionals master English
             </motion.p>
           </div>
 
