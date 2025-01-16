@@ -2,19 +2,33 @@ import React, { useRef, useEffect } from 'react';
 
 interface VideoPanelProps {
   activeSection: number;
+  key?: number; // Add key to force remount
 }
 
 export const VideoPanel = React.memo(({ activeSection }: VideoPanelProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.currentTime = 0;
-      videoRef.current.play().catch(error => {
-        console.log('Video autoplay failed:', error);
-      });
+    const video = videoRef.current;
+    if (video) {
+      // Reset and play video
+      video.currentTime = 0;
+      const playPromise = video.play();
+      
+      if (playPromise !== undefined) {
+        playPromise.catch(error => {
+          console.log('Video playback failed:', error);
+        });
+      }
+
+      // Clean up function
+      return () => {
+        if (!video.paused) {
+          video.pause();
+        }
+      };
     }
-  }, [activeSection]);
+  }, [activeSection]); // This will trigger on both automatic and manual section changes
 
   return (
     <div className="absolute inset-0 bg-demo-background flex items-center justify-center bg-gradient-to-br from-demo-background to-[#2A2F3C] relative overflow-hidden">
@@ -37,24 +51,12 @@ export const VideoPanel = React.memo(({ activeSection }: VideoPanelProps) => {
         className="w-full h-full object-cover"
         muted
         playsInline
-        loop
-        autoPlay
+        loop={false} // Disable loop since we want to control playback
         style={{ 
           willChange: 'transform',
           transform: 'translateZ(0)'
         }}
       />
-
-      {/* Progress bar */}
-      <div className="absolute bottom-0 left-0 w-full h-1 bg-black/20">
-        <div 
-          className="h-full bg-gradient-to-r from-demo-blue via-demo-purple to-demo-pink rounded-full animate-progress-bar"
-          style={{ 
-            willChange: 'width',
-            transform: 'translateZ(0)'
-          }} 
-        />
-      </div>
     </div>
   );
 }); 

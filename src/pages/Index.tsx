@@ -30,6 +30,7 @@ const DEMO_SECTIONS = [
 
 const Index = () => {
   const [activeSection, setActiveSection] = React.useState(0);
+  const [videoKey, setVideoKey] = React.useState(0);
 
   const handleSectionComplete = () => {
     setActiveSection((prev) => (prev + 1) % DEMO_SECTIONS.length);
@@ -37,6 +38,7 @@ const Index = () => {
 
   const handleSectionClick = (index: number) => {
     setActiveSection(index);
+    setVideoKey(prev => prev + 1);
   };
 
   return (
@@ -59,7 +61,7 @@ const Index = () => {
                   isActive={activeSection === index}
                   onComplete={handleSectionComplete}
                   onClick={() => handleSectionClick(index)}
-                  className="transition-all duration-300 hover:transform hover:scale-[1.02] border border-transparent hover:border-demo-green/30 shadow-lg hover:shadow-demo-green/20"
+                  className="transition-all duration-300 hover:transform hover:scale-[1.02] border border-transparent hover:border-demo-purple/30 shadow-lg hover:shadow-demo-purple/20"
                 />
               ))}
             </div>
@@ -67,8 +69,11 @@ const Index = () => {
             {/* Right Panel - Video with aspect ratio */}
             <div className="flex-1 relative">
               <div className="w-full pt-[56.25%] relative">
-                <div className="absolute inset-0 rounded-xl overflow-hidden shadow-2xl border border-demo-green/20 backdrop-blur-sm animate-fade-in opacity-0" style={{ animationDelay: '0.4s' }}>
-                  <VideoPanel activeSection={activeSection} />
+                <div className="absolute inset-0 rounded-xl overflow-hidden shadow-2xl border border-demo-purple/20 backdrop-blur-sm animate-fade-in opacity-0" style={{ animationDelay: '0.4s' }}>
+                  <VideoPanel 
+                    key={videoKey} 
+                    activeSection={activeSection} 
+                  />
                 </div>
               </div>
             </div>
