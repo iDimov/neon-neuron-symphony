@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useMemo } from 'react';
+import React, { useEffect, useCallback, useMemo, useRef } from 'react';
 import { cn } from "@/lib/utils";
 
 interface DemoSectionProps {
@@ -18,12 +18,17 @@ export const DemoSection = React.memo(({
   onClick,
   className 
 }: DemoSectionProps) => {
+  const timerRef = useRef<NodeJS.Timeout>();
+
   useEffect(() => {
-    let timer: NodeJS.Timeout;
     if (isActive) {
-      timer = setTimeout(onComplete, 12000);
+      timerRef.current = setTimeout(onComplete, 12000);
     }
-    return () => clearTimeout(timer);
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    };
   }, [isActive, onComplete]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
@@ -57,6 +62,7 @@ export const DemoSection = React.memo(({
       role="button"
       tabIndex={0}
       onKeyDown={handleKeyDown}
+      style={{ willChange: 'transform, opacity, box-shadow' }}
     >
       <div className="p-4">
         <h3 className={titleClassName}>
@@ -72,7 +78,8 @@ export const DemoSection = React.memo(({
                 className="h-full bg-gradient-to-r from-demo-blue via-demo-purple to-demo-pink rounded-full"
                 style={{ 
                   animation: 'progress-bar 12s linear',
-                  willChange: 'width'
+                  willChange: 'width',
+                  transform: 'translateZ(0)'
                 }} 
               />
             </div>
@@ -81,4 +88,6 @@ export const DemoSection = React.memo(({
       </div>
     </div>
   );
-}); 
+});
+
+DemoSection.displayName = 'DemoSection'; 
