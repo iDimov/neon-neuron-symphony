@@ -22,7 +22,7 @@ export const DemoSection = React.memo(({
 
   useEffect(() => {
     if (isActive) {
-      timerRef.current = setTimeout(onComplete, 12000);
+      timerRef.current = setTimeout(onComplete, 15000);
     }
     return () => {
       if (timerRef.current) {
