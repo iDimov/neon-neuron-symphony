@@ -71,19 +71,31 @@ module.exports = {
           to: { height: 0 },
         },
         "progress-bar": {
-          from: { width: "0%" },
-          to: { width: "100%" },
+          '0%': { 
+            width: "0%",
+            transform: 'translateZ(0)'
+          },
+          '100%': { 
+            width: "100%",
+            transform: 'translateZ(0)'
+          },
         },
         "fade-in": {
-          from: { opacity: 0 },
-          to: { opacity: 1 },
+          '0%': { 
+            opacity: 0,
+            transform: 'translateY(10px) translateZ(0)'
+          },
+          '100%': { 
+            opacity: 1,
+            transform: 'translateY(0) translateZ(0)'
+          },
         },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "progress-bar": "progress-bar 12s linear",
-        "fade-in": "fade-in 0.5s ease-out forwards",
+        "fade-in": "fade-in 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards",
       },
     },
   },

@@ -1,5 +1,4 @@
-import { motion } from "framer-motion";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState, useMemo } from "react";
 
 interface Node {
   x: number;
@@ -89,12 +88,47 @@ export const NeuralBackground = () => {
   const gradientCacheRef = useRef<Map<string, CanvasGradient>>(new Map());
   const [opacity, setOpacity] = useState(1);
 
+  // Pre-calculate expensive values
+  const sinTable = useMemo(() => {
+    const table = new Float32Array(1000);
+    for (let i = 0; i < 1000; i++) {
+      table[i] = Math.sin((i / 1000) * Math.PI * 2);
+    }
+    return table;
+  }, []);
+
+  const cosTable = useMemo(() => {
+    const table = new Float32Array(1000);
+    for (let i = 0; i < 1000; i++) {
+      table[i] = Math.cos((i / 1000) * Math.PI * 2);
+    }
+    return table;
+  }, []);
+
+  const lookupSin = useCallback((angle: number) => {
+    const index = Math.floor((angle % (Math.PI * 2)) / (Math.PI * 2) * 1000);
+    return sinTable[index];
+  }, [sinTable]);
+
+  const lookupCos = useCallback((angle: number) => {
+    const index = Math.floor((angle % (Math.PI * 2)) / (Math.PI * 2) * 1000);
+    return cosTable[index];
+  }, [cosTable]);
+
+  // Optimize node initialization
   const initNodes = useCallback((width: number, height: number) => {
-    return Array.from({ length: NODE_COUNT }, () => {
-      const baseRadius = Math.random() * 1.5 + 1.5;
+    const nodes = new Array(NODE_COUNT);
+    const baseRadiusRange = 1.5;
+    const colorCount = COLORS.length;
+    const glowRange = MAX_GLOW - MIN_GLOW;
+    const oscillationRange = OSCILLATION_SPEED_RANGE[1] - OSCILLATION_SPEED_RANGE[0];
+
+    for (let i = 0; i < NODE_COUNT; i++) {
+      const baseRadius = Math.random() * baseRadiusRange + 1.5;
       const x = Math.random() * width;
       const y = Math.random() * height;
-      return {
+      
+      nodes[i] = {
         x,
         y,
         originalX: x,
@@ -105,20 +139,110 @@ export const NeuralBackground = () => {
         vz: (Math.random() - 0.5) * BASE_SPEED * 0.5,
         radius: baseRadius,
         baseRadius,
-        color: COLORS[Math.floor(Math.random() * COLORS.length)],
-        glowIntensity: Math.random() * (MAX_GLOW - MIN_GLOW) + MIN_GLOW,
+        color: COLORS[Math.floor(Math.random() * colorCount)],
+        glowIntensity: Math.random() * glowRange + MIN_GLOW,
         oscillationOffset: Math.random() * Math.PI * 2,
-        oscillationSpeed:
-          OSCILLATION_SPEED_RANGE[0] +
-          Math.random() *
-            (OSCILLATION_SPEED_RANGE[1] - OSCILLATION_SPEED_RANGE[0]),
+        oscillationSpeed: OSCILLATION_SPEED_RANGE[0] + Math.random() * oscillationRange,
         initialScale: 0,
         movementOffset: Math.random() * Math.PI * 2,
         glowWaveOffset: Math.random() * Math.PI * 2,
         connections: 0,
       };
-    });
+    }
+    return nodes;
   }, []);
+
+  // Optimize gradient creation with offscreen canvas
+  const offscreenGradientCanvasRef = useRef<HTMLCanvasElement>();
+  
+  useEffect(() => {
+    offscreenGradientCanvasRef.current = document.createElement('canvas');
+    offscreenGradientCanvasRef.current.width = 100;
+    offscreenGradientCanvasRef.current.height = 1;
+  }, []);
+
+  const createGradientOnce = useCallback((colors: string[], stops: number[]) => {
+    const canvas = offscreenGradientCanvasRef.current;
+    if (!canvas) return null;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+
+    const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
+    colors.forEach((color, i) => gradient.addColorStop(stops[i], color));
+
+    return gradient;
+  }, []);
+
+  // Optimize node updates with batch processing
+  const updateNodes = useCallback((
+    deltaTime: number,
+    width: number,
+    height: number,
+    progress: number,
+    timestamp: number
+  ) => {
+    const nodes = nodesRef.current;
+    const batchSize = 5;
+    const batches = Math.ceil(nodes.length / batchSize);
+
+    for (let b = 0; b < batches; b++) {
+      const start = b * batchSize;
+      const end = Math.min(start + batchSize, nodes.length);
+
+      for (let i = start; i < end; i++) {
+        const node = nodes[i];
+        const timeOffset = timestamp * NODE_MOVEMENT_FREQUENCY + node.movementOffset;
+
+        // Use lookup tables for trigonometric functions
+        const dx = lookupSin(timeOffset) * lookupCos(timeOffset * 0.7) * BASE_MOVEMENT_RANGE +
+                  lookupSin(timeOffset * 0.4) * MOVEMENT_VARIATION;
+
+        const dy = lookupCos(timeOffset * 0.8) * lookupSin(timeOffset * 0.5) * BASE_MOVEMENT_RANGE +
+                  lookupCos(timeOffset * 0.6) * MOVEMENT_VARIATION;
+
+        const dz = lookupSin(timeOffset * 0.3) * 0.4;
+
+        const distanceX = node.originalX - node.x;
+        const distanceY = node.originalY - node.y;
+        const returnForceX =
+          distanceX * RETURN_FORCE * (1 + Math.abs(distanceX) / MAX_OFFSET);
+        const returnForceY =
+          distanceY * RETURN_FORCE * (1 + Math.abs(distanceY) / MAX_OFFSET);
+
+        node.vx += dx * deltaTime * 0.01 + returnForceX;
+        node.vy += dy * deltaTime * 0.01 + returnForceY;
+        node.vz += dz * deltaTime * 0.01;
+
+        if (progress < 1) {
+          node.initialScale = Math.min(1, node.initialScale + deltaTime * 0.01);
+        }
+
+        node.x += node.vx * deltaTime;
+        node.y += node.vy * deltaTime;
+        node.z += node.vz * deltaTime;
+
+        const glowWave =
+          Math.sin(timestamp * GLOW_WAVE_FREQUENCY + node.glowWaveOffset) * 0.5;
+        node.glowIntensity =
+          MIN_GLOW + (MAX_GLOW - MIN_GLOW) * (0.5 + glowWave * 0.5);
+
+        node.vx *= Math.pow(VELOCITY_DAMPENING, deltaTime);
+        node.vy *= Math.pow(VELOCITY_DAMPENING, deltaTime);
+        node.vz *= Math.pow(VELOCITY_DAMPENING, deltaTime);
+
+        node.x = Math.max(
+          node.originalX - MAX_OFFSET,
+          Math.min(node.originalX + MAX_OFFSET, node.x)
+        );
+        node.y = Math.max(
+          node.originalY - MAX_OFFSET,
+          Math.min(node.originalY + MAX_OFFSET, node.y)
+        );
+        node.z = Math.max(-Z_RANGE / 6, Math.min(Z_RANGE / 6, node.z));
+      }
+    }
+  }, [lookupSin, lookupCos]);
 
   const calculateScale = useCallback((z: number) => {
     return 1 + (z / Z_RANGE) * 0.5;
@@ -451,76 +575,6 @@ export const NeuralBackground = () => {
     []
   );
 
-  const updateNodes = useCallback(
-    (
-      deltaTime: number,
-      width: number,
-      height: number,
-      progress: number,
-      timestamp: number
-    ) => {
-      const nodes = nodesRef.current;
-
-      nodes.forEach((node) => {
-        const timeOffset =
-          timestamp * NODE_MOVEMENT_FREQUENCY + node.movementOffset;
-
-        const dx =
-          Math.sin(timeOffset) *
-            Math.cos(timeOffset * 0.7) *
-            BASE_MOVEMENT_RANGE +
-          Math.sin(timeOffset * 0.4) * MOVEMENT_VARIATION;
-
-        const dy =
-          Math.cos(timeOffset * 0.8) *
-            Math.sin(timeOffset * 0.5) *
-            BASE_MOVEMENT_RANGE +
-          Math.cos(timeOffset * 0.6) * MOVEMENT_VARIATION;
-
-        const dz = Math.sin(timeOffset * 0.3) * 0.4;
-
-        const distanceX = node.originalX - node.x;
-        const distanceY = node.originalY - node.y;
-        const returnForceX =
-          distanceX * RETURN_FORCE * (1 + Math.abs(distanceX) / MAX_OFFSET);
-        const returnForceY =
-          distanceY * RETURN_FORCE * (1 + Math.abs(distanceY) / MAX_OFFSET);
-
-        node.vx += dx * deltaTime * 0.01 + returnForceX;
-        node.vy += dy * deltaTime * 0.01 + returnForceY;
-        node.vz += dz * deltaTime * 0.01;
-
-        if (progress < 1) {
-          node.initialScale = Math.min(1, node.initialScale + deltaTime * 0.01);
-        }
-
-        node.x += node.vx * deltaTime;
-        node.y += node.vy * deltaTime;
-        node.z += node.vz * deltaTime;
-
-        const glowWave =
-          Math.sin(timestamp * GLOW_WAVE_FREQUENCY + node.glowWaveOffset) * 0.5;
-        node.glowIntensity =
-          MIN_GLOW + (MAX_GLOW - MIN_GLOW) * (0.5 + glowWave * 0.5);
-
-        node.vx *= Math.pow(VELOCITY_DAMPENING, deltaTime);
-        node.vy *= Math.pow(VELOCITY_DAMPENING, deltaTime);
-        node.vz *= Math.pow(VELOCITY_DAMPENING, deltaTime);
-
-        node.x = Math.max(
-          node.originalX - MAX_OFFSET,
-          Math.min(node.originalX + MAX_OFFSET, node.x)
-        );
-        node.y = Math.max(
-          node.originalY - MAX_OFFSET,
-          Math.min(node.originalY + MAX_OFFSET, node.y)
-        );
-        node.z = Math.max(-Z_RANGE / 6, Math.min(Z_RANGE / 6, node.z));
-      });
-    },
-    []
-  );
-
   const drawAnimatedGradients = useCallback((ctx: CanvasRenderingContext2D, timestamp: number, width: number, height: number) => {
     ctx.save();
     
@@ -649,6 +703,8 @@ export const NeuralBackground = () => {
           backdropFilter: "blur(12px)",
           zIndex: -1,
           opacity: opacity,
+          willChange: 'transform',
+          transform: 'translateZ(0)'
         }}
       />
     </div>

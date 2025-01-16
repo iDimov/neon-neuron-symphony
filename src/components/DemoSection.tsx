@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useCallback, useMemo } from 'react';
 import { cn } from "@/lib/utils";
 
 interface DemoSectionProps {
@@ -10,7 +10,7 @@ interface DemoSectionProps {
   className?: string;
 }
 
-export const DemoSection = ({ 
+export const DemoSection = React.memo(({ 
   title, 
   description, 
   isActive,
@@ -18,55 +18,67 @@ export const DemoSection = ({
   onClick,
   className 
 }: DemoSectionProps) => {
-  React.useEffect(() => {
+  useEffect(() => {
     let timer: NodeJS.Timeout;
     if (isActive) {
-      timer = setTimeout(() => {
-        onComplete();
-      }, 12000);
+      timer = setTimeout(onComplete, 12000);
     }
     return () => clearTimeout(timer);
   }, [isActive, onComplete]);
 
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      onClick();
+    }
+  }, [onClick]);
+
+  const containerClassName = useMemo(() => cn(
+    "rounded-lg transition-all duration-500 cursor-pointer backdrop-blur-sm overflow-hidden",
+    isActive ? "bg-demo-background/90 shadow-lg shadow-demo-purple/10" : "bg-demo-background/40 hover:bg-demo-background/60",
+    "border border-transparent hover:border-demo-purple/30",
+    className
+  ), [isActive, className]);
+
+  const titleClassName = useMemo(() => cn(
+    "text-lg font-semibold bg-gradient-to-r from-white to-demo-purple bg-clip-text text-transparent",
+    "transition-all duration-300",
+    isActive ? "mb-3" : "mb-0"
+  ), [isActive]);
+
+  const contentClassName = useMemo(() => cn(
+    "transition-all duration-500 overflow-hidden",
+    isActive ? "max-h-[300px] opacity-100" : "max-h-0 opacity-0"
+  ), [isActive]);
+
   return (
     <div 
-      className={cn(
-        "rounded-lg transition-all duration-500 cursor-pointer backdrop-blur-sm overflow-hidden",
-        isActive ? "bg-demo-background/90 shadow-lg shadow-demo-purple/10" : "bg-demo-background/40 hover:bg-demo-background/60",
-        "border border-transparent hover:border-demo-purple/30",
-        className
-      )}
+      className={containerClassName}
       onClick={onClick}
       role="button"
       tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          onClick();
-        }
-      }}
+      onKeyDown={handleKeyDown}
     >
       <div className="p-4">
-        <h3 className={cn(
-          "text-lg font-semibold bg-gradient-to-r from-white to-demo-purple bg-clip-text text-transparent",
-          "transition-all duration-300",
-          isActive ? "mb-3" : "mb-0"
-        )}>
+        <h3 className={titleClassName}>
           {title}
         </h3>
-        <div className={cn(
-          "transition-all duration-500 overflow-hidden",
-          isActive ? "max-h-[300px] opacity-100" : "max-h-0 opacity-0"
-        )}>
+        <div className={contentClassName}>
           <p className="text-demo-text text-sm leading-relaxed">
             {description}
           </p>
           {isActive && (
             <div className="h-1 bg-demo-background/80 mt-4 rounded-full overflow-hidden backdrop-blur-sm">
-              <div className="h-full bg-gradient-to-r from-demo-blue via-demo-purple to-demo-pink animate-progress-bar rounded-full" />
+              <div 
+                className="h-full bg-gradient-to-r from-demo-blue via-demo-purple to-demo-pink rounded-full"
+                style={{ 
+                  animation: 'progress-bar 12s linear',
+                  willChange: 'width'
+                }} 
+              />
             </div>
           )}
         </div>
       </div>
     </div>
   );
-}; 
+}); 

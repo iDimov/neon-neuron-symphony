@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { Brain, BookOpen, Gauge } from 'lucide-react';
 
 interface Node {
@@ -81,175 +81,164 @@ const AnimatedLearningMethods = () => {
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
 
-  const initNodes = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
+  // Pre-calculate node positions
+  const nodePositions = useMemo(() => {
     const centerY = window.innerHeight * 0.4;
     const spacing = window.innerWidth / 4;
-
-    nodesRef.current = NODES_INFO.map((info, i) => ({
-      x: spacing * (i + 1),
-      y: centerY,
-      vx: (Math.random() - 0.5) * SPEED,
-      vy: (Math.random() - 0.5) * SPEED,
-      radius: NODE_RADIUS,
-      color: info.color,
-      id: info.id
-    }));
-
-    // Initialize connections
-    connectionsRef.current = [];
-    nodesRef.current.forEach((nodeA, i) => {
-      nodesRef.current.forEach((nodeB, j) => {
-        if (i < j) {
-          connectionsRef.current.push({
-            nodeA,
-            nodeB,
-            pulses: []
-          });
-        }
-      });
-    });
-  }, []);
-
-  const drawConnections = useCallback((ctx: CanvasRenderingContext2D, deltaTime: number) => {
-    // Draw connections first (under nodes)
-    connectionsRef.current.forEach(connection => {
-      const { nodeA, nodeB } = connection;
-      const dx = nodeB.x - nodeA.x;
-      const dy = nodeB.y - nodeA.y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-      
-      // Base connection line
-      const alpha = Math.min(1, 0.5 - (distance / CONNECTION_DISTANCE));
-      
-      ctx.beginPath();
-      ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.4})`;
-      ctx.lineWidth = .5;
-      ctx.moveTo(nodeA.x, nodeA.y);
-      ctx.lineTo(nodeB.x, nodeB.y);
-      ctx.stroke();
-
-      // Glowing effect
-      ctx.beginPath();
-      ctx.strokeStyle = `${nodeA.color}70`;
-      ctx.lineWidth = 3;
-      ctx.shadowBlur = 30;
-      ctx.shadowColor = nodeA.color;
-      ctx.moveTo(nodeA.x, nodeA.y);
-      ctx.lineTo(nodeB.x, nodeB.y);
-      ctx.stroke();
-
-      // Handle pulse spawning
-      if (Math.random() < PULSE_SPAWN_CHANCE && connection.pulses.length < 3) {
-        connection.pulses.push({
-          position: 0,
-          opacity: 1,
-          speed: PULSE_SPEED * (0.8 + Math.random() * 0.4)
-        });
-      }
-
-      // Update and draw pulses
-      connection.pulses = connection.pulses.filter(pulse => {
-        const x = nodeA.x + dx * pulse.position;
-        const y = nodeA.y + dy * pulse.position;
-
-        // Draw pulse
-        const gradient = ctx.createRadialGradient(x, y, 0, x, y, PULSE_SIZE);
-        gradient.addColorStop(0, `${nodeA.color}${Math.floor(pulse.opacity * 255).toString(16).padStart(2, '0')}`);
-        gradient.addColorStop(1, 'transparent');
-
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        ctx.arc(x, y, PULSE_SIZE, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Update pulse
-        pulse.position += pulse.speed * deltaTime;
-        pulse.opacity = Math.max(0, pulse.opacity - PULSE_FADE_SPEED * deltaTime);
-
-        return pulse.position < 1 && pulse.opacity > 0;
-      });
-    });
-
-    // Draw node glows
-    nodesRef.current.forEach(node => {
-      const isHovered = node.id === hoveredNode;
-      
-      // Glow effect
-      const gradient = ctx.createRadialGradient(
-        node.x,
-        node.y,
-        0,
-        node.x,
-        node.y,
-        node.radius * (isHovered ? 1.8 : 1.5)
-      );
-      gradient.addColorStop(0, `${node.color}${isHovered ? 'B0' : '90'}`);
-      gradient.addColorStop(0.5, `${node.color}${isHovered ? '80' : '60'}`);
-      gradient.addColorStop(1, 'transparent');
-
-      ctx.fillStyle = gradient;
-      ctx.shadowBlur = isHovered ? 50 : 40;
-      ctx.shadowColor = node.color;
-      ctx.beginPath();
-      ctx.arc(node.x, node.y, node.radius * (isHovered ? 1.2 : 1), 0, Math.PI * 2);
-      ctx.fill();
-    });
-  }, [hoveredNode]);
-
-  const updateNodes = useCallback(() => {
-    nodesRef.current.forEach(node => {
-      node.x += node.vx;
-      node.y += node.vy;
-
-      const startX = node.x - MOVEMENT_RANGE;
-      const startY = node.y - MOVEMENT_RANGE;
-
-      // Bounce within movement range
-      if (Math.abs(node.x - startX) > MOVEMENT_RANGE * 2) {
-        node.vx *= -1;
-      }
-      if (Math.abs(node.y - startY) > MOVEMENT_RANGE * 2) {
-        node.vy *= -1;
-      }
-    });
-  }, []);
-
-  const animate = useCallback((timestamp: number) => {
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext('2d');
-    if (!canvas || !ctx) return;
-
-    const deltaTime = timestamp - lastTimeRef.current;
-    lastTimeRef.current = timestamp;
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    updateNodes();
-    drawConnections(ctx, deltaTime);
+    return NODES_INFO.map((_, i) => ({
+      x: spacing * (i + 1),
+      y: centerY
+    }));
+  }, []);
 
-    animationFrameRef.current = requestAnimationFrame(animate);
-  }, [drawConnections, updateNodes]);
+  const initNodes = useCallback(() => {
+    const nodes = new Array(NODES_INFO.length);
+    
+    for (let i = 0; i < NODES_INFO.length; i++) {
+      nodes[i] = {
+        x: nodePositions[i].x,
+        y: nodePositions[i].y,
+        vx: (Math.random() - 0.5) * SPEED,
+        vy: (Math.random() - 0.5) * SPEED,
+        radius: NODE_RADIUS,
+        color: NODES_INFO[i].color,
+        id: NODES_INFO[i].id
+      };
+    }
+    nodesRef.current = nodes;
 
-  const handleMouseMove = useCallback((event: React.MouseEvent<HTMLCanvasElement>) => {
+    // Initialize connections with pre-allocation
+    const connectionCount = (NODES_INFO.length * (NODES_INFO.length - 1)) / 2;
+    const connections = new Array(connectionCount);
+    let connectionIndex = 0;
+
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        connections[connectionIndex++] = {
+          nodeA: nodes[i],
+          nodeB: nodes[j],
+          pulses: []
+        };
+      }
+    }
+    connectionsRef.current = connections;
+  }, [nodePositions]);
+
+  // Optimize mouse interaction with spatial partitioning
+  const spatialGridRef = useRef<Map<string, Node>>(new Map());
+  
+  const updateSpatialGrid = useCallback(() => {
+    spatialGridRef.current.clear();
+    const cellSize = NODE_RADIUS * 2;
+    
+    nodesRef.current.forEach(node => {
+      const gridX = Math.floor(node.x / cellSize);
+      const gridY = Math.floor(node.y / cellSize);
+      spatialGridRef.current.set(`${gridX},${gridY}`, node);
+    });
+  }, []);
+
+  const findNodeUnderMouse = useCallback((x: number, y: number) => {
+    const cellSize = NODE_RADIUS * 2;
+    const gridX = Math.floor(x / cellSize);
+    const gridY = Math.floor(y / cellSize);
+    
+    // Check neighboring cells
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dy = -1; dy <= 1; dy++) {
+        const node = spatialGridRef.current.get(`${gridX + dx},${gridY + dy}`);
+        if (node) {
+          const distance = Math.hypot(x - node.x, y - node.y);
+          if (distance < NODE_RADIUS) {
+            return node;
+          }
+        }
+      }
+    }
+    return null;
+  }, []);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     const rect = canvas.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
 
-    // Find hovered node
-    const hoveredNodeObj = nodesRef.current.find(node => {
-      const dx = x - node.x;
-      const dy = y - node.y;
-      return Math.sqrt(dx * dx + dy * dy) < HOVER_RADIUS;
+    const node = findNodeUnderMouse(x, y);
+    setHoveredNode(node?.id || null);
+  }, [findNodeUnderMouse]);
+
+  // Optimize animation loop
+  const animate = useCallback((timestamp: number) => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const deltaTime = timestamp - lastTimeRef.current;
+    lastTimeRef.current = timestamp;
+
+    // Clear with alpha for motion blur effect
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Batch process nodes
+    const nodes = nodesRef.current;
+    const batchSize = 5;
+    const batches = Math.ceil(nodes.length / batchSize);
+
+    for (let b = 0; b < batches; b++) {
+      const start = b * batchSize;
+      const end = Math.min(start + batchSize, nodes.length);
+
+      for (let i = start; i < end; i++) {
+        const node = nodes[i];
+        // Update node position
+        node.x += node.vx * deltaTime;
+        node.y += node.vy * deltaTime;
+
+        // Boundary check with dampening
+        if (node.x < 0 || node.x > canvas.width) node.vx *= -0.8;
+        if (node.y < 0 || node.y > canvas.height) node.vy *= -0.8;
+      }
+    }
+
+    // Update spatial grid for mouse interaction
+    updateSpatialGrid();
+
+    // Draw connections with hardware acceleration hints
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+    
+    connectionsRef.current.forEach(connection => {
+      const { nodeA, nodeB } = connection;
+      ctx.beginPath();
+      ctx.moveTo(nodeA.x, nodeA.y);
+      ctx.lineTo(nodeB.x, nodeB.y);
+      ctx.stroke();
+    });
+    
+    ctx.restore();
+
+    // Draw nodes with hardware acceleration
+    nodes.forEach(node => {
+      const isHovered = node.id === hoveredNode;
+      const isSelected = node.id === selectedNode;
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, NODE_RADIUS, 0, Math.PI * 2);
+      ctx.fillStyle = isHovered || isSelected ? node.color : `${node.color}88`;
+      ctx.fill();
+      ctx.restore();
     });
 
-    setHoveredNode(hoveredNodeObj?.id || null);
-  }, []);
+    animationFrameRef.current = requestAnimationFrame(animate);
+  }, [hoveredNode, selectedNode, updateSpatialGrid]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -278,7 +267,11 @@ const AnimatedLearningMethods = () => {
       <canvas
         ref={canvasRef}
         className="fixed inset-0 w-full h-full"
-        style={{ zIndex: 0 }}
+        style={{ 
+          zIndex: 0,
+          willChange: 'transform',
+          transform: 'translateZ(0)'
+        }}
         onMouseMove={handleMouseMove}
       />
       <div className="absolute inset-0 pointer-events-none">
