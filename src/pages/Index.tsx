@@ -1,36 +1,31 @@
 import React from 'react';
-import { Hero } from '../components/Hero';
-import { CorePrinciples } from '../components/CorePrinciples';
-import { NetworkVisualization } from '../components/NetworkVisualization';
-import { HeroAnimation } from '@/components/HeroAnimation';
-import AnimatedLearningMethods from '@/components/AnimatedLearningMethods';
+import { Hero } from '@/components/Hero';
 import { CorePrinciplesAlt } from '@/components/CorePrinciplesAlt';
+import { NeuralBackground } from '@/components/NeuralBackground';
 import { DemoSection } from '@/components/DemoSection';
 import { VideoPanel } from '@/components/VideoPanel';
-import { NeuralBackground } from '@/components/NeuralBackground';
 
 const DEMO_SECTIONS = [
   {
     title: "Planning Your Journey",
-    description: "Set clear goals, organize study schedules, and track daily progress with our comprehensive planning tools. Perfect for IT professionals looking to enhance their English communication skills."
+    description: "Personalized learning paths tailored to your IT career goals. Our AI analyzes your current level and creates a custom roadmap for your success."
   },
   {
     title: "Interactive Learning Hub",
-    description: "Access our Academy for structured lessons, practice real-world scenarios in our Lab, and build your IT vocabulary through interactive exercises tailored for tech professionals."
+    description: "Engage with real-world IT scenarios, code reviews, and technical discussions. Practice your English in context that matters for your work."
   },
   {
     title: "Progress Tracking & Analytics",
-    description: "Monitor your learning journey with detailed statistics, maintain a personal learning journal, and track completed activities to stay motivated and focused."
+    description: "Monitor your improvement with detailed analytics. Track your vocabulary growth, speaking confidence, and professional communication skills."
   },
   {
     title: "Global Tech Community",
-    description: "Connect with fellow IT professionals worldwide, join live learning sessions, and find practice partners to improve your English communication skills in a tech-focused environment."
+    description: "Connect with IT professionals worldwide. Practice your English in real conversations about technology, coding, and industry trends."
   }
 ];
 
 const Index = () => {
   const [activeSection, setActiveSection] = React.useState(0);
-  const [videoKey, setVideoKey] = React.useState(0);
 
   const handleSectionComplete = () => {
     setActiveSection((prev) => (prev + 1) % DEMO_SECTIONS.length);
@@ -38,7 +33,6 @@ const Index = () => {
 
   const handleSectionClick = (index: number) => {
     setActiveSection(index);
-    setVideoKey(prev => prev + 1);
   };
 
   return (
@@ -65,7 +59,7 @@ const Index = () => {
              Your English Evolution: <br /> A Quick Overview
             </h2>
             <p className="text-lg sm:text-xl text-slate-300/90 max-w-2xl mx-auto">
-              Discover how our AI-Powered Platform Make Learning Engaging and Practical.
+              Discover how our AI-Powered Platform Makes Learning Engaging and Practical.
             </p>
           </div>
 
@@ -74,7 +68,7 @@ const Index = () => {
             <div className="w-full lg:w-[300px] space-y-6 flex-shrink-0">
               {DEMO_SECTIONS.map((section, index) => (
                 <DemoSection
-                  key={index}
+                  key={section.title}
                   title={section.title}
                   description={section.description}
                   isActive={activeSection === index}
@@ -88,10 +82,10 @@ const Index = () => {
             {/* Right Panel - Video with aspect ratio */}
             <div className="flex-1 relative">
               <div className="w-full pt-[56.25%] relative">
-                <div className="absolute inset-0 rounded-xl overflow-hidden shadow-2xl border border-demo-purple/20 backdrop-blur-sm animate-fade-in opacity-0" style={{ animationDelay: '0.4s' }}>
+                <div className="absolute inset-0">
                   <VideoPanel 
-                    key={videoKey} 
-                    activeSection={activeSection} 
+                    activeSection={DEMO_SECTIONS[activeSection].title}
+                    className="w-full h-full"
                   />
                 </div>
               </div>

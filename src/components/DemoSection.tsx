@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { cn } from "@/lib/utils";
 import { Brain, BookOpen, ChartBar, Users } from 'lucide-react';
 import { motion, useAnimation, useInView } from 'framer-motion';
@@ -87,6 +87,22 @@ export const DemoSection = React.memo(({
 }: DemoSectionProps) => {
   const Icon = SECTION_ICONS[title as keyof typeof SECTION_ICONS] || Brain;
   const gradient = SECTION_GRADIENTS[title as keyof typeof SECTION_GRADIENTS] || "from-demo-blue to-demo-purple";
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  useEffect(() => {
+    if (isActive) {
+      setIsExpanded(true);
+    } else {
+      const timer = setTimeout(() => setIsExpanded(false), 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isActive]);
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    onClick();
+    setIsExpanded(true);
+  };
 
   return (
     <div 
@@ -96,12 +112,13 @@ export const DemoSection = React.memo(({
         "border border-transparent hover:border-demo-purple/30",
         className
       )}
-      onClick={onClick}
+      onClick={handleClick}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
-          onClick();
+          e.preventDefault();
+          handleClick(e as unknown as React.MouseEvent);
         }
       }}
       style={{ willChange: 'transform, opacity, box-shadow' }}
