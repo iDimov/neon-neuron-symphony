@@ -48,7 +48,7 @@ const GRADIENT_COLORS = [
   { color: '#EC4899', opacity: 0.05, speed: 0.00006, scale: 1.3 },    // Pink
 ];
 
-const NODE_COUNT = 35;
+const NODE_COUNT = 25;
 const CONNECTION_DISTANCE = 250;
 const MAX_CONNECTIONS_PER_NODE = 2;
 const BASE_SPEED = 0.03;
