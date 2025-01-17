@@ -28,7 +28,7 @@ const Index = () => {
   const [activeSection, setActiveSection] = React.useState(0);
 
   const handleSectionComplete = () => {
-    setActiveSection((prev) => (prev + 1) % DEMO_SECTIONS.length);
+    setActiveSection((prev) => (prev) % DEMO_SECTIONS.length);
   };
 
   const handleSectionClick = (index: number) => {

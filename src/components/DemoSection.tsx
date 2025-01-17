@@ -114,13 +114,6 @@ export const DemoSection = React.memo(({
       )}
       onClick={handleClick}
       role="button"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          handleClick(e as unknown as React.MouseEvent);
-        }
-      }}
       style={{ willChange: 'transform, opacity, box-shadow' }}
     >
       <div className="p-4">
