@@ -48,8 +48,27 @@ const Index = () => {
       <CorePrinciplesAlt />
       
       {/* Demo Section */}
-      <section className="relative py-20">
+      <section className="relative py-32">
         <div className="max-w-[1400px] mx-auto px-8">
+          {/* Section Header */}
+          <div className="text-center max-w-3xl mx-auto mb-20">
+            <div className="inline-flex items-center justify-center px-4 py-1.5 mb-6 
+                         border border-purple-500/20 rounded-full bg-purple-500/10">
+              <span className="text-sm font-medium bg-gradient-to-r from-purple-400 to-blue-400 
+                           bg-clip-text text-transparent">
+                How it works. Quick Tour
+              </span>
+            </div>
+            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold bg-gradient-to-r 
+                         from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-8
+                         tracking-tight leading-[1.1]">
+             Your English Evolution: <br /> A Quick Overview
+            </h2>
+            <p className="text-lg sm:text-xl text-slate-300/90 max-w-2xl mx-auto">
+              Discover how our AI-Powered Platform Make Learning Engaging and Practical.
+            </p>
+          </div>
+
           <div className="flex flex-col lg:flex-row gap-8">
             {/* Left Panel - Fixed width */}
             <div className="w-full lg:w-[300px] space-y-6 flex-shrink-0">
