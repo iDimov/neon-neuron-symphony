@@ -1,5 +1,20 @@
 import React, { useEffect, useCallback, useMemo, useRef } from 'react';
 import { cn } from "@/lib/utils";
+import { Brain, BookOpen, ChartBar, Users } from 'lucide-react';
+
+const SECTION_ICONS = {
+  "Planning Your Journey": Brain,
+  "Interactive Learning Hub": BookOpen,
+  "Progress Tracking & Analytics": ChartBar,
+  "Global Tech Community": Users
+};
+
+const SECTION_GRADIENTS = {
+  "Planning Your Journey": "from-demo-blue to-demo-purple",
+  "Interactive Learning Hub": "from-demo-purple to-demo-pink",
+  "Progress Tracking & Analytics": "from-demo-pink to-demo-purple",
+  "Global Tech Community": "from-demo-purple to-demo-blue"
+};
 
 interface DemoSectionProps {
   title: string;
@@ -19,6 +34,8 @@ export const DemoSection = React.memo(({
   className 
 }: DemoSectionProps) => {
   const timerRef = useRef<NodeJS.Timeout>();
+  const Icon = SECTION_ICONS[title as keyof typeof SECTION_ICONS] || Brain;
+  const gradient = SECTION_GRADIENTS[title as keyof typeof SECTION_GRADIENTS] || "from-demo-blue to-demo-purple";
 
   useEffect(() => {
     if (isActive) {
@@ -38,7 +55,7 @@ export const DemoSection = React.memo(({
   }, [onClick]);
 
   const containerClassName = useMemo(() => cn(
-    "rounded-lg transition-all duration-500 cursor-pointer backdrop-blur-sm overflow-hidden",
+    "rounded-xl transition-all duration-500 cursor-pointer backdrop-blur-sm overflow-hidden group",
     isActive ? "bg-demo-background/90 shadow-lg shadow-demo-purple/10" : "bg-demo-background/40 hover:bg-demo-background/60",
     "border border-transparent hover:border-demo-purple/30",
     className
@@ -65,25 +82,47 @@ export const DemoSection = React.memo(({
       style={{ willChange: 'transform, opacity, box-shadow' }}
     >
       <div className="p-4">
-        <h3 className={titleClassName}>
-          {title}
-        </h3>
+        {/* Icon and Title */}
+        <div className="flex items-center gap-3">
+          <div className={cn(
+            "w-8 h-8 rounded-lg bg-gradient-to-br flex items-center justify-center transition-all duration-500 group-hover:scale-105",
+            isActive ? gradient : "from-white/5 to-white/10"
+          )}>
+            <Icon className={cn(
+              "w-4 h-4 transition-all duration-500",
+              isActive ? "text-white" : "text-white/50"
+            )} />
+          </div>
+          <h3 className={titleClassName}>
+            {title}
+          </h3>
+        </div>
+
+        {/* Description and Progress */}
         <div className={contentClassName}>
-          <p className="text-demo-text text-sm leading-relaxed">
-            {description}
-          </p>
-          {isActive && (
-            <div className="h-1 bg-demo-background/80 mt-4 rounded-full overflow-hidden backdrop-blur-sm">
-              <div 
-                className="h-full bg-gradient-to-r from-demo-blue via-demo-purple to-demo-pink rounded-full"
-                style={{ 
-                  animation: 'progress-bar 12s linear',
-                  willChange: 'width',
-                  transform: 'translateZ(0)'
-                }} 
-              />
-            </div>
-          )}
+          <div className="mt-3 pl-11"> {/* Align with icon */}
+            <p className="text-demo-text text-sm leading-relaxed mb-4">
+              {description}
+            </p>
+            {isActive && (
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-demo-blue via-demo-purple to-demo-pink opacity-10 blur-xl" />
+                <div className="h-0.5 bg-demo-background/80 rounded-full overflow-hidden backdrop-blur-sm relative">
+                  <div 
+                    className={cn(
+                      "h-full rounded-full bg-gradient-to-r",
+                      gradient,
+                      "animate-progress-bar"
+                    )}
+                    style={{ 
+                      willChange: 'width',
+                      transform: 'translateZ(0)'
+                    }} 
+                  />
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
