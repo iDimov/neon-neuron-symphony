@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react';
-import { motion, useScroll, useTransform, useSpring, AnimatePresence } from 'framer-motion';
+import { useState } from 'react';
+import { motion } from 'framer-motion';
 import { Brain, BookOpen, Rocket, Zap, Target, Heart, Lightbulb, Database, Repeat, Leaf } from 'lucide-react';
 import l2Cover from '../images/l2-cover.png';
 import brainCover from '../images/2brain.jpg';
@@ -89,20 +89,10 @@ const BookCard = ({ method, index }) => {
 
   return (
     <div className="h-[600px] w-full">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ 
-          opacity: 1, 
-          y: 0,
-          transition: {
-            duration: 0.5,
-            delay: index * 0.1
-          }
-        }}
-        viewport={{ once: true }}
+      <div
         className="w-full h-full perspective"
-        onHoverStart={() => setIsFlipped(true)}
-        onHoverEnd={() => setIsFlipped(false)}
+        onMouseEnter={() => setIsFlipped(true)}
+        onMouseLeave={() => setIsFlipped(false)}
       >
         <motion.div
           className="relative w-full h-full preserve-3d"
@@ -172,15 +162,8 @@ const BookCard = ({ method, index }) => {
               {/* Principles List */}
               <div className="space-y-8">
                 {method.principles.map((principle, idx) => (
-                  <motion.div
+                  <div
                     key={idx}
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: isFlipped ? 1 : 0, y: isFlipped ? 0 : 15 }}
-                    transition={{ 
-                      delay: 0.2 + idx * 0.1,
-                      duration: 0.5,
-                      ease: [0.23, 1, 0.32, 1]
-                    }}
                     className="group"
                   >
                     <div className="flex items-center gap-3 mb-2">
@@ -200,40 +183,31 @@ const BookCard = ({ method, index }) => {
                                 group-hover:text-slate-300 transition-all duration-300">
                       {principle.description}
                     </p>
-                  </motion.div>
+                  </div>
                 ))}
               </div>
             </div>
           </div>
         </motion.div>
-      </motion.div>
+      </div>
     </div>
   );
 };
 
 export const CorePrinciplesAlt = () => {
-  const containerRef = useRef(null);
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start end", "end start"]
-  });
-
-  const opacity = useSpring(useTransform(scrollYProgress, [0, 0.2], [0, 1]));
-  const y = useSpring(useTransform(scrollYProgress, [0, 0.2], [40, 0]));
-
   return (
-    <section ref={containerRef} className="relative py-32 overflow-hidden bg-[#030409]">
+    <section className="relative py-32 overflow-hidden bg-[#030409]">
       {/* Background Effects */}
       <div className="absolute inset-0 bg-[#030409]" />
       <div className="absolute inset-0 bg-gradient-to-b from-purple-500/5 via-transparent to-transparent" />
-      <motion.div 
+      <div 
         className="absolute top-0 left-1/4 w-96 h-96 -translate-x-1/2 -translate-y-1/2"
         style={{
           background: 'radial-gradient(circle, rgba(168,85,247,0.05) 0%, rgba(168,85,247,0.01) 50%, transparent 70%)',
           filter: 'blur(40px)',
         }}
       />
-      <motion.div 
+      <div 
         className="absolute bottom-0 right-1/4 w-96 h-96 translate-x-1/2 translate-y-1/2"
         style={{
           background: 'radial-gradient(circle, rgba(59,130,246,0.05) 0%, rgba(59,130,246,0.01) 50%, transparent 70%)',
@@ -242,34 +216,19 @@ export const CorePrinciplesAlt = () => {
       />
       
       <div className="container relative mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
-        <motion.div 
-          style={{ opacity, y }}
-          className="mx-auto"
-        >
+        <div className="mx-auto">
           {/* Header */}
           <div className="text-center mb-20">
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              viewport={{ once: true }}
-              className="inline-flex items-center justify-center px-4 py-1.5 mb-8
-                        border border-purple-500/20 rounded-full bg-[#1A103C]"
-            >
+            <div className="inline-flex items-center justify-center px-4 py-1.5 mb-8
+                        border border-purple-500/20 rounded-full bg-[#1A103C]">
               <Brain className="w-4 h-4 mr-2 text-purple-400" />
               <span className="text-sm font-medium bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
                 Core Learning Principles
               </span>
-            </motion.div>
+            </div>
 
             <div className="max-w-4xl mx-auto">
-              <motion.h2 
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.3 }}
-                viewport={{ once: true }}
-                className="text-4xl md:text-5xl lg:text-6xl font-bold mb-8 tracking-tight leading-[1.15]"
-              >
+              <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-8 tracking-tight leading-[1.15]">
                 <span className="inline-block bg-gradient-to-r from-white via-slate-200 to-purple-100 bg-clip-text text-transparent">
                   Scientific Principles
                 </span>
@@ -277,18 +236,12 @@ export const CorePrinciplesAlt = () => {
                 <span className="inline-block bg-gradient-to-r from-purple-400 via-blue-500 to-cyan-400 bg-clip-text text-transparent">
                   Practical Mastery
                 </span>
-              </motion.h2>
+              </h2>
 
-              <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.4 }}
-                viewport={{ once: true }}
-                className="text-lg md:text-xl bg-gradient-to-r from-slate-400 via-slate-300 to-slate-400 
-                          bg-clip-text text-transparent max-w-2xl mx-auto font-medium leading-relaxed"
-              >
+              <p className="text-lg md:text-xl bg-gradient-to-r from-slate-400 via-slate-300 to-slate-400 
+                          bg-clip-text text-transparent max-w-2xl mx-auto font-medium leading-relaxed">
                 Built on proven research that revolutionizes how IT professionals master English
-              </motion.p>
+              </p>
             </div>
           </div>
 
@@ -298,7 +251,7 @@ export const CorePrinciplesAlt = () => {
               <BookCard key={index} method={method} index={index} />
             ))}
           </div>
-        </motion.div>
+        </div>
       </div>
     </section>
   );

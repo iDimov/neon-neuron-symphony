@@ -4,7 +4,6 @@ import { CorePrinciples } from '../components/CorePrinciples';
 import { NetworkVisualization } from '../components/NetworkVisualization';
 import { HeroAnimation } from '@/components/HeroAnimation';
 import AnimatedLearningMethods from '@/components/AnimatedLearningMethods';
-import { NeuralBackground } from '@/components/NeuralBackground';
 import { CorePrinciplesAlt } from '@/components/CorePrinciplesAlt';
 import { DemoSection } from '@/components/DemoSection';
 import { VideoPanel } from '@/components/VideoPanel';
@@ -43,7 +42,6 @@ const Index = () => {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-neural-bg">
-      <NeuralBackground />
       <Hero />
       <CorePrinciplesAlt />
       
