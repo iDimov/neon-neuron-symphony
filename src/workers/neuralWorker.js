@@ -7,18 +7,23 @@ const COLORS = [
   "#EC4899", // Pink
 ];
 
-const NODE_COUNT = 77;
+const NODE_COUNT = 50;
 const CONNECTION_DISTANCE = 180;
 const CONNECTION_DISTANCE_SQ = CONNECTION_DISTANCE * CONNECTION_DISTANCE;
 const MAX_CONNECTIONS_PER_NODE = 3;
 const BASE_SPEED = 0.003;
 const MAX_SPEED = 0.8;
-const PULSE_SPEED = 0.0003;
-const PULSE_SPAWN_RATE = 0.0006;
-const PULSE_MIN_SPACING = 0.5;
+const PULSE_SPEED = 0.001;
+const PULSE_SPAWN_RATE = 0.0001;
+const PULSE_MIN_SPACING = 0.8;
+const MAX_PULSES_PER_CONNECTION = 1;
 const MAX_GLOW = 1.5;
 const MIN_GLOW = 0.6;
 const GLOW_SPEED = 0.0003;
+const CURVE_INTENSITY = 0.3;  // Controls how curved the lines are
+const MOUSE_INFLUENCE_RADIUS = 150;
+const MOUSE_REPEL_STRENGTH = 0.5;
+const MOUSE_ATTRACT_STRENGTH = 0.2;
 
 let nodes = [];
 let connections = [];
@@ -27,6 +32,9 @@ let startTime = 0;
 let frameCount = 0;
 let width = 0;
 let height = 0;
+let mouseX = null;
+let mouseY = null;
+let isMouseOver = false;
 
 function initNodes(w, h) {
   width = w;
@@ -43,19 +51,36 @@ function initNodes(w, h) {
       radius: Math.random() * 1.5 + 2.5,
       color: COLORS[Math.floor(Math.random() * COLORS.length)],
       connections: 0,
-      glowIntensity: Math.random() * (MAX_GLOW - MIN_GLOW) + MIN_GLOW,
-      glowOffset: Math.random() * Math.PI * 2
+    //   glowIntensity: Math.random() * (MAX_GLOW - MIN_GLOW) + MIN_GLOW,
+    //   glowOffset: Math.random() * Math.PI * 2
     });
   }
 }
 
 function updateNodes(deltaTime, timestamp) {
   nodes.forEach(node => {
-    // Update glow effect
-    node.glowIntensity = MIN_GLOW + (Math.sin(timestamp * GLOW_SPEED + node.glowOffset) * 0.5 + 0.5) * (MAX_GLOW - MIN_GLOW);
-
+    // Basic movement
     node.x += node.vx * deltaTime;
     node.y += node.vy * deltaTime;
+
+    // Mouse interaction
+    if (isMouseOver && mouseX !== null && mouseY !== null) {
+      const dx = node.x - mouseX;
+      const dy = node.y - mouseY;
+      const distSq = dx * dx + dy * dy;
+      
+      if (distSq < MOUSE_INFLUENCE_RADIUS * MOUSE_INFLUENCE_RADIUS) {
+        const dist = Math.sqrt(distSq);
+        const influence = 1 - (dist / MOUSE_INFLUENCE_RADIUS);
+        
+        // Repel when close, attract when further
+        const strength = dist < MOUSE_INFLUENCE_RADIUS * 0.5 ? 
+          MOUSE_REPEL_STRENGTH : -MOUSE_ATTRACT_STRENGTH;
+        
+        node.vx += (dx / dist) * strength * influence * deltaTime;
+        node.vy += (dy / dist) * strength * influence * deltaTime;
+      }
+    }
 
     // Bounce off walls
     if (node.x < 0 || node.x > width) node.vx *= -1;
@@ -109,7 +134,7 @@ function updateConnections(deltaTime) {
       
       // Add slight pulse size variation
       const pulsePhase = Math.sin(pulse.progress * Math.PI);
-      pulse.size = 1.5 + pulsePhase * 0.5;
+      pulse.size = 1 + pulsePhase * 0.5;
       pulse.opacity = Math.max(0, Math.min(1, opacityProgress));
       
       if (pulse.progress >= 1) {
@@ -117,8 +142,8 @@ function updateConnections(deltaTime) {
       }
     }
     
-    // Add new pulses with spacing check
-    if (Math.random() < PULSE_SPAWN_RATE * deltaTime && conn.pulses.length < 2) {
+    // Add new pulses with spacing check and reduced probability
+    if (Math.random() < PULSE_SPAWN_RATE * deltaTime && conn.pulses.length < MAX_PULSES_PER_CONNECTION) {
       const lastPulse = conn.pulses[conn.pulses.length - 1];
       const canSpawn = !lastPulse || lastPulse.progress > PULSE_MIN_SPACING;
       
@@ -186,12 +211,20 @@ function animate(timestamp) {
   const drawCommands = [];
   drawCommands.push({ type: 'clear' });
 
-  // Draw connections first (without glow for better performance)
+  // Draw connections with curves
   connections.forEach(conn => {
     const dx = conn.nodeB.x - conn.nodeA.x;
     const dy = conn.nodeB.y - conn.nodeA.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
     const strength = Math.pow(1 - (dist / CONNECTION_DISTANCE), 1.5);
+
+    // Calculate control point for quadratic curve
+    const midX = (conn.nodeA.x + conn.nodeB.x) / 2;
+    const midY = (conn.nodeA.y + conn.nodeB.y) / 2;
+    const perpX = -dy * CURVE_INTENSITY;
+    const perpY = dx * CURVE_INTENSITY;
+    const cpX = midX + perpX;
+    const cpY = midY + perpY;
 
     drawCommands.push({ type: 'beginPath' });
     drawCommands.push({ 
@@ -200,14 +233,22 @@ function animate(timestamp) {
     });
     drawCommands.push({ type: 'lineWidth', value: 1.2 });
     drawCommands.push({ type: 'moveTo', x: conn.nodeA.x, y: conn.nodeA.y });
-    drawCommands.push({ type: 'lineTo', x: conn.nodeB.x, y: conn.nodeB.y });
+    drawCommands.push({ 
+      type: 'quadraticCurveTo',
+      cpX,
+      cpY,
+      x: conn.nodeB.x,
+      y: conn.nodeB.y
+    });
     drawCommands.push({ type: 'stroke' });
 
-    // Draw pulses with size variation
+    // Draw pulses along the curve
     conn.pulses.forEach(pulse => {
       const t = pulse.progress;
-      const x = conn.nodeA.x + dx * t;
-      const y = conn.nodeA.y + dy * t;
+      // Quadratic bezier curve point calculation
+      const mt = 1 - t;
+      const x = mt * mt * conn.nodeA.x + 2 * mt * t * cpX + t * t * conn.nodeB.x;
+      const y = mt * mt * conn.nodeA.y + 2 * mt * t * cpY + t * t * conn.nodeB.y;
       
       drawCommands.push({ type: 'beginPath' });
       drawCommands.push({ 
@@ -226,12 +267,9 @@ function animate(timestamp) {
     });
   });
 
-  // Draw nodes with optimized glow
+  // Draw nodes
   nodes.forEach(node => {
-    // Draw glow (only for nodes, as they're fewer in number)
     drawCommands.push({ type: 'beginPath' });
-    drawCommands.push({ type: 'shadowBlur', value: 10 * node.glowIntensity });
-    drawCommands.push({ type: 'shadowColor', value: node.color });
     drawCommands.push({ type: 'fillStyle', value: node.color });
     drawCommands.push({ 
       type: 'arc',
@@ -242,9 +280,6 @@ function animate(timestamp) {
       endAngle: Math.PI * 2
     });
     drawCommands.push({ type: 'fill' });
-    
-    // Reset shadow for better performance
-    drawCommands.push({ type: 'shadowBlur', value: 0 });
   });
 
   self.postMessage({
@@ -264,6 +299,18 @@ self.onmessage = function(e) {
       break;
     case 'resize':
       initNodes(e.data.width, e.data.height);
+      break;
+    case 'mousemove':
+      mouseX = e.data.x;
+      mouseY = e.data.y;
+      break;
+    case 'mouseenter':
+      isMouseOver = true;
+      break;
+    case 'mouseleave':
+      isMouseOver = false;
+      mouseX = null;
+      mouseY = null;
       break;
   }
 }; 

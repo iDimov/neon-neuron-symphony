@@ -49,6 +49,37 @@ export const NeuralBackground = () => {
       height: rect.height
     });
 
+    // Handle mouse events
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!canvas || !workerRef.current) return;
+      
+      const rect = canvas.getBoundingClientRect();
+      const x = (e.clientX - rect.left) * dpr;
+      const y = (e.clientY - rect.top) * dpr;
+      
+      workerRef.current.postMessage({
+        type: 'mousemove',
+        x,
+        y
+      });
+    };
+
+    const handleMouseEnter = () => {
+      if (workerRef.current) {
+        workerRef.current.postMessage({ type: 'mouseenter' });
+      }
+    };
+
+    const handleMouseLeave = () => {
+      if (workerRef.current) {
+        workerRef.current.postMessage({ type: 'mouseleave' });
+      }
+    };
+
+    canvas.addEventListener('mousemove', handleMouseMove);
+    canvas.addEventListener('mouseenter', handleMouseEnter);
+    canvas.addEventListener('mouseleave', handleMouseLeave);
+
     // Handle worker messages
     workerRef.current.onmessage = (e) => {
       if (e.data.type === 'draw') {
@@ -71,17 +102,14 @@ export const NeuralBackground = () => {
             case 'lineWidth':
               ctx.lineWidth = cmd.value;
               break;
-            case 'shadowBlur':
-              ctx.shadowBlur = cmd.value;
-              break;
-            case 'shadowColor':
-              ctx.shadowColor = cmd.value;
-              break;
             case 'moveTo':
               ctx.moveTo(cmd.x, cmd.y);
               break;
             case 'lineTo':
               ctx.lineTo(cmd.x, cmd.y);
+              break;
+            case 'quadraticCurveTo':
+              ctx.quadraticCurveTo(cmd.cpX, cmd.cpY, cmd.x, cmd.y);
               break;
             case 'arc':
               ctx.arc(cmd.x, cmd.y, cmd.radius, cmd.startAngle, cmd.endAngle);
@@ -135,6 +163,9 @@ export const NeuralBackground = () => {
         workerRef.current.terminate();
       }
       window.removeEventListener('resize', handleResize);
+      canvas.removeEventListener('mousemove', handleMouseMove);
+      canvas.removeEventListener('mouseenter', handleMouseEnter);
+      canvas.removeEventListener('mouseleave', handleMouseLeave);
     };
   }, [inView]);
 
@@ -145,7 +176,7 @@ export const NeuralBackground = () => {
         inViewRef(el);
       }}
       style={{
-        position: "fixed",
+        position: "absolute",
         top: 0,
         left: 0,
         width: "100%",
