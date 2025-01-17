@@ -1,34 +1,41 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 
 interface VideoPanelProps {
   activeSection: number;
-  key?: number; // Add key to force remount
+  key?: number;
 }
 
 export const VideoPanel = React.memo(({ activeSection }: VideoPanelProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   useEffect(() => {
     const video = videoRef.current;
-    if (video) {
-      // Reset and play video
-      video.currentTime = 0;
-      const playPromise = video.play();
-      
-      if (playPromise !== undefined) {
-        playPromise.catch(error => {
-          console.log('Video playback failed:', error);
-        });
-      }
+    if (!video) return;
 
-      // Clean up function
-      return () => {
-        if (!video.paused) {
-          video.pause();
-        }
-      };
-    }
-  }, [activeSection]); // This will trigger on both automatic and manual section changes
+    // Reset video state
+    video.currentTime = 0;
+    setIsPlaying(false);
+
+    // Delay play to ensure previous operations are complete
+    const playTimeout = setTimeout(async () => {
+      try {
+        setIsPlaying(true);
+        await video.play();
+      } catch (error) {
+        console.log('Video playback failed:', error);
+        setIsPlaying(false);
+      }
+    }, 100);
+
+    return () => {
+      clearTimeout(playTimeout);
+      if (video && !video.paused) {
+        setIsPlaying(false);
+        video.pause();
+      }
+    };
+  }, [activeSection]);
 
   return (
     <div className="absolute inset-0 bg-demo-background flex items-center justify-center bg-gradient-to-br from-demo-background to-[#2A2F3C] relative overflow-hidden">
@@ -51,7 +58,7 @@ export const VideoPanel = React.memo(({ activeSection }: VideoPanelProps) => {
         className="w-full h-full object-cover"
         muted
         playsInline
-        loop={false} // Disable loop since we want to control playback
+        loop={false}
         style={{ 
           willChange: 'transform',
           transform: 'translateZ(0)'

@@ -70,14 +70,14 @@ module.exports = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: 0 },
         },
-        "progress-bar": {
+        "progress": {
           '0%': { 
-            width: "0%",
-            transform: 'translateZ(0)'
+            width: '0%',
+            opacity: '0.8'
           },
           '100%': { 
-            width: "100%",
-            transform: 'translateZ(0)'
+            width: '100%',
+            opacity: '1'
           },
         },
         "fade-in": {
@@ -94,7 +94,7 @@ module.exports = {
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "progress-bar": "progress-bar 12s linear",
+        "progress": "progress 15s linear forwards",
         "fade-in": "fade-in 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards",
       },
     },

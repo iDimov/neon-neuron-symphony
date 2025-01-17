@@ -1,6 +1,7 @@
-import React, { useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { cn } from "@/lib/utils";
 import { Brain, BookOpen, ChartBar, Users } from 'lucide-react';
+import { motion, useAnimation, useInView } from 'framer-motion';
 
 const SECTION_ICONS = {
   "Planning Your Journey": Brain,
@@ -33,56 +34,62 @@ export const DemoSection = React.memo(({
   onClick,
   className 
 }: DemoSectionProps) => {
-  const timerRef = useRef<NodeJS.Timeout>();
+  const controls = useAnimation();
+  const progressRef = useRef(null);
+  const isInView = useInView(progressRef, { once: false });
   const Icon = SECTION_ICONS[title as keyof typeof SECTION_ICONS] || Brain;
   const gradient = SECTION_GRADIENTS[title as keyof typeof SECTION_GRADIENTS] || "from-demo-blue to-demo-purple";
 
   useEffect(() => {
-    if (isActive) {
-      timerRef.current = setTimeout(onComplete, 15000);
+    let timeoutId: NodeJS.Timeout;
+
+    if (isActive && isInView) {
+      controls.set({ scaleX: 0, originX: 0 });
+      controls.start({
+        scaleX: 1,
+        transition: { 
+          duration: 15,
+          ease: "linear",
+          delay: 0.2
+        }
+      });
+
+      // Use timeout as backup for completion
+      timeoutId = setTimeout(onComplete, 15200); // 15s + 0.2s delay
+    } else {
+      controls.stop();
+      controls.set({ scaleX: 0 });
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
     }
+
     return () => {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
+      if (timeoutId) {
+        clearTimeout(timeoutId);
       }
     };
-  }, [isActive, onComplete]);
-
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      onClick();
-    }
-  }, [onClick]);
-
-  const containerClassName = useMemo(() => cn(
-    "rounded-xl transition-all duration-500 cursor-pointer backdrop-blur-sm overflow-hidden group",
-    isActive ? "bg-demo-background/90 shadow-lg shadow-demo-purple/10" : "bg-demo-background/40 hover:bg-demo-background/60",
-    "border border-transparent hover:border-demo-purple/30",
-    className
-  ), [isActive, className]);
-
-  const titleClassName = useMemo(() => cn(
-    "text-lg font-semibold bg-gradient-to-r from-white to-demo-purple bg-clip-text text-transparent",
-    "transition-all duration-300",
-    isActive ? "mb-3" : "mb-0"
-  ), [isActive]);
-
-  const contentClassName = useMemo(() => cn(
-    "transition-all duration-500 overflow-hidden",
-    isActive ? "max-h-[300px] opacity-100" : "max-h-0 opacity-0"
-  ), [isActive]);
+  }, [isActive, isInView, controls, onComplete]);
 
   return (
     <div 
-      className={containerClassName}
+      className={cn(
+        "rounded-xl transition-all duration-500 cursor-pointer backdrop-blur-sm overflow-hidden group",
+        isActive ? "bg-demo-background/90 shadow-lg shadow-demo-purple/10" : "bg-demo-background/40 hover:bg-demo-background/60",
+        "border border-transparent hover:border-demo-purple/30",
+        className
+      )}
       onClick={onClick}
       role="button"
       tabIndex={0}
-      onKeyDown={handleKeyDown}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          onClick();
+        }
+      }}
       style={{ willChange: 'transform, opacity, box-shadow' }}
     >
       <div className="p-4">
-        {/* Icon and Title */}
         <div className="flex items-center gap-3">
           <div className={cn(
             "w-8 h-8 rounded-lg bg-gradient-to-br flex items-center justify-center transition-all duration-500 group-hover:scale-105",
@@ -93,33 +100,37 @@ export const DemoSection = React.memo(({
               isActive ? "text-white" : "text-white/50"
             )} />
           </div>
-          <h3 className={titleClassName}>
+          <h3 className={cn(
+            "text-lg font-semibold bg-gradient-to-r from-white to-demo-purple bg-clip-text text-transparent",
+            "transition-all duration-300",
+            isActive ? "mb-3" : "mb-0"
+          )}>
             {title}
           </h3>
         </div>
 
-        {/* Description and Progress */}
-        <div className={contentClassName}>
-          <div className="mt-3 pl-11"> {/* Align with icon */}
+        <div className={cn(
+          "transition-all duration-500 overflow-hidden",
+          isActive ? "max-h-[300px] opacity-100" : "max-h-0 opacity-0"
+        )}>
+          <div className="mt-3 pl-11">
             <p className="text-demo-text text-sm leading-relaxed mb-4">
               {description}
             </p>
             {isActive && (
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-demo-blue via-demo-purple to-demo-pink opacity-10 blur-xl" />
-                <div className="h-0.5 bg-demo-background/80 rounded-full overflow-hidden backdrop-blur-sm relative">
-                  <div 
-                    className={cn(
-                      "h-full rounded-full bg-gradient-to-r",
-                      gradient,
-                      "animate-progress-bar"
-                    )}
-                    style={{ 
-                      willChange: 'width',
-                      transform: 'translateZ(0)'
-                    }} 
-                  />
-                </div>
+              <div 
+                ref={progressRef}
+                className="h-1.5 rounded-full bg-demo-background/40 shadow-inner overflow-hidden"
+              >
+                <motion.div 
+                  className="h-full w-full rounded-full bg-gradient-to-r from-demo-blue via-demo-purple to-demo-pink"
+                  initial={{ scaleX: 0 }}
+                  animate={controls}
+                  style={{ 
+                    originX: 0,
+                    willChange: 'transform',
+                  }}
+                />
               </div>
             )}
           </div>

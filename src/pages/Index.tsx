@@ -43,7 +43,7 @@ const Index = () => {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-neural-bg">
-      <NeuralBackground />
+      {/* <NeuralBackground /> */}
       <Hero />
       <CorePrinciplesAlt />
       
