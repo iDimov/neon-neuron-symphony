@@ -3,10 +3,8 @@ import React, { useCallback, useEffect, useRef, useState, useMemo } from "react"
 interface Node {
   x: number;
   y: number;
-  z: number;
   vx: number;
   vy: number;
-  vz: number;
   radius: number;
   color: string;
   glowIntensity: number;
@@ -61,7 +59,6 @@ const MIN_CONNECTION_LIFETIME = 15000;
 const CONNECTION_UPDATE_INTERVAL = 15;
 const LINE_DRAW_SPEED = 0.03;
 const VELOCITY_DAMPENING = 0.97;
-const Z_RANGE = 150;
 const INITIAL_ANIMATION_DURATION = 900;
 const WAVE_FREQUENCY = 0.0001;
 const PULSE_SIZE_MIN = 0.5;
@@ -115,7 +112,6 @@ export const NeuralBackground = () => {
     return cosTable[index];
   }, [cosTable]);
 
-  // Optimize node initialization
   const initNodes = useCallback((width: number, height: number) => {
     const nodes = new Array(NODE_COUNT);
     const baseRadiusRange = 1.5;
@@ -133,10 +129,8 @@ export const NeuralBackground = () => {
         y,
         originalX: x,
         originalY: y,
-        z: Math.random() * Z_RANGE - Z_RANGE / 2,
         vx: (Math.random() - 0.5) * BASE_SPEED,
         vy: (Math.random() - 0.5) * BASE_SPEED,
-        vz: (Math.random() - 0.5) * BASE_SPEED * 0.5,
         radius: baseRadius,
         baseRadius,
         color: COLORS[Math.floor(Math.random() * colorCount)],
@@ -152,29 +146,6 @@ export const NeuralBackground = () => {
     return nodes;
   }, []);
 
-  // Optimize gradient creation with offscreen canvas
-  const offscreenGradientCanvasRef = useRef<HTMLCanvasElement>();
-  
-  useEffect(() => {
-    offscreenGradientCanvasRef.current = document.createElement('canvas');
-    offscreenGradientCanvasRef.current.width = 100;
-    offscreenGradientCanvasRef.current.height = 1;
-  }, []);
-
-  const createGradientOnce = useCallback((colors: string[], stops: number[]) => {
-    const canvas = offscreenGradientCanvasRef.current;
-    if (!canvas) return null;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return null;
-
-    const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
-    colors.forEach((color, i) => gradient.addColorStop(stops[i], color));
-
-    return gradient;
-  }, []);
-
-  // Optimize node updates with batch processing
   const updateNodes = useCallback((
     deltaTime: number,
     width: number,
@@ -194,14 +165,11 @@ export const NeuralBackground = () => {
         const node = nodes[i];
         const timeOffset = timestamp * NODE_MOVEMENT_FREQUENCY + node.movementOffset;
 
-        // Use lookup tables for trigonometric functions
         const dx = lookupSin(timeOffset) * lookupCos(timeOffset * 0.7) * BASE_MOVEMENT_RANGE +
                   lookupSin(timeOffset * 0.4) * MOVEMENT_VARIATION;
 
         const dy = lookupCos(timeOffset * 0.8) * lookupSin(timeOffset * 0.5) * BASE_MOVEMENT_RANGE +
                   lookupCos(timeOffset * 0.6) * MOVEMENT_VARIATION;
-
-        const dz = lookupSin(timeOffset * 0.3) * 0.4;
 
         const distanceX = node.originalX - node.x;
         const distanceY = node.originalY - node.y;
@@ -212,7 +180,6 @@ export const NeuralBackground = () => {
 
         node.vx += dx * deltaTime * 0.01 + returnForceX;
         node.vy += dy * deltaTime * 0.01 + returnForceY;
-        node.vz += dz * deltaTime * 0.01;
 
         if (progress < 1) {
           node.initialScale = Math.min(1, node.initialScale + deltaTime * 0.01);
@@ -220,7 +187,6 @@ export const NeuralBackground = () => {
 
         node.x += node.vx * deltaTime;
         node.y += node.vy * deltaTime;
-        node.z += node.vz * deltaTime;
 
         const glowWave =
           Math.sin(timestamp * GLOW_WAVE_FREQUENCY + node.glowWaveOffset) * 0.5;
@@ -229,7 +195,6 @@ export const NeuralBackground = () => {
 
         node.vx *= Math.pow(VELOCITY_DAMPENING, deltaTime);
         node.vy *= Math.pow(VELOCITY_DAMPENING, deltaTime);
-        node.vz *= Math.pow(VELOCITY_DAMPENING, deltaTime);
 
         node.x = Math.max(
           node.originalX - MAX_OFFSET,
@@ -239,14 +204,9 @@ export const NeuralBackground = () => {
           node.originalY - MAX_OFFSET,
           Math.min(node.originalY + MAX_OFFSET, node.y)
         );
-        node.z = Math.max(-Z_RANGE / 6, Math.min(Z_RANGE / 6, node.z));
       }
     }
   }, [lookupSin, lookupCos]);
-
-  const calculateScale = useCallback((z: number) => {
-    return 1 + (z / Z_RANGE) * 0.5;
-  }, []);
 
   const getOrCreateGradient = useCallback(
     (
@@ -269,25 +229,21 @@ export const NeuralBackground = () => {
       timestamp: number,
       progress: number
     ) => {
-      const scale = calculateScale(node.z);
-      const currentScale =
-        scale *
-        (progress < 1
-          ? node.initialScale + (1 - node.initialScale) * progress
-          : 1);
+      const currentScale = progress < 1
+        ? node.initialScale + (1 - node.initialScale) * progress
+        : 1;
       const radiusModifier =
         Math.sin(timestamp * node.oscillationSpeed + node.oscillationOffset) *
           0.3 +
         1;
       const currentRadius = node.baseRadius * radiusModifier * currentScale;
-      const alpha = Math.max(0, 1 - Math.abs(node.z) / Z_RANGE);
 
       ctx.save();
 
       // Outer glow
       const outerGradient = getOrCreateGradient(
         ctx,
-        `outer-${node.color}-${alpha}`,
+        `outer-${node.color}`,
         () => {
           const gradient = ctx.createRadialGradient(
             node.x,
@@ -297,18 +253,8 @@ export const NeuralBackground = () => {
             node.y,
             currentRadius * 10
           );
-          gradient.addColorStop(
-            0,
-            `${node.color}${Math.floor(alpha * 30)
-              .toString(16)
-              .padStart(2, "0")}`
-          );
-          gradient.addColorStop(
-            0.5,
-            `${node.color}${Math.floor(alpha * 15)
-              .toString(16)
-              .padStart(2, "0")}`
-          );
+          gradient.addColorStop(0, `${node.color}30`);
+          gradient.addColorStop(0.5, `${node.color}15`);
           gradient.addColorStop(1, "transparent");
           return gradient;
         }
@@ -326,7 +272,7 @@ export const NeuralBackground = () => {
       // Inner bright core
       const innerGradient = getOrCreateGradient(
         ctx,
-        `inner-${node.color}-${alpha}`,
+        `inner-${node.color}`,
         () => {
           const gradient = ctx.createRadialGradient(
             node.x,
@@ -336,24 +282,9 @@ export const NeuralBackground = () => {
             node.y,
             currentRadius * 2.5
           );
-          gradient.addColorStop(
-            0,
-            `${node.color}${Math.floor(alpha * 255)
-              .toString(16)
-              .padStart(2, "0")}`
-          );
-          gradient.addColorStop(
-            0.6,
-            `${node.color}${Math.floor(alpha * 180)
-              .toString(16)
-              .padStart(2, "0")}`
-          );
-          gradient.addColorStop(
-            1,
-            `${node.color}${Math.floor(alpha * 100)
-              .toString(16)
-              .padStart(2, "0")}`
-          );
+          gradient.addColorStop(0, `${node.color}ff`);
+          gradient.addColorStop(0.6, `${node.color}b4`);
+          gradient.addColorStop(1, `${node.color}64`);
           return gradient;
         }
       );
@@ -365,7 +296,7 @@ export const NeuralBackground = () => {
 
       ctx.restore();
     },
-    [calculateScale, getOrCreateGradient]
+    [getOrCreateGradient]
   );
 
   const updateConnections = useCallback(() => {
@@ -395,8 +326,7 @@ export const NeuralBackground = () => {
 
         const dx = nodeA.x - nodeB.x;
         const dy = nodeA.y - nodeB.y;
-        const dz = nodeA.z - nodeB.z;
-        const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        const distance = Math.sqrt(dx * dx + dy * dy);
 
         if (distance < CONNECTION_DISTANCE) {
           const existingConnection = connectionsRef.current.find(
@@ -434,40 +364,21 @@ export const NeuralBackground = () => {
         const { nodeA, nodeB, strength, width } = connection;
         const dx = nodeB.x - nodeA.x;
         const dy = nodeB.y - nodeA.y;
-        const dz = nodeB.z - nodeB.z;
-        const distance = Math.max(
-          0.001,
-          Math.sqrt(dx * dx + dy * dy + dz * dz)
-        );
-        const avgZ = (nodeA.z + nodeB.z) / 2;
-        const depthAlpha = Math.max(0, 1 - Math.abs(avgZ) / Z_RANGE);
+        const distance = Math.max(0.001, Math.sqrt(dx * dx + dy * dy));
 
         connection.initialOpacity = Math.min(
           1,
           connection.initialOpacity + deltaTime * 0.012
         );
-        const opacity = Math.min(
-          1,
-          progress * connection.initialOpacity * depthAlpha * 2.5
-        );
+        const opacity = Math.min(1, progress * connection.initialOpacity * 2.5);
         const alpha = Math.floor(
-          Math.max(
-            0,
-            Math.min(
-              255,
-              strength * 0.8 * opacity * 255 * connection.drawProgress
-            )
-          )
-        )
-          .toString(16)
-          .padStart(2, "0");
+          Math.max(0, Math.min(255, strength * 0.8 * opacity * 255 * connection.drawProgress))
+        ).toString(16).padStart(2, "0");
 
         const midX = (nodeA.x + nodeB.x) / 2;
         const midY = (nodeA.y + nodeB.y) / 2;
-        const waveAmplitude = Math.min(20, distance * 0.12) * depthAlpha;
-        const waveOffset =
-          Math.sin(timestamp * WAVE_FREQUENCY + nodeA.oscillationOffset) *
-          waveAmplitude;
+        const waveAmplitude = Math.min(20, distance * 0.12);
+        const waveOffset = Math.sin(timestamp * WAVE_FREQUENCY + nodeA.oscillationOffset) * waveAmplitude;
         const perpX = -dy / distance;
         const perpY = dx / distance;
         const controlX = midX + perpX * waveOffset;
@@ -475,7 +386,7 @@ export const NeuralBackground = () => {
 
         ctx.save();
         ctx.lineCap = "round";
-        ctx.lineWidth = Math.max(0.8, width * depthAlpha * 1.2);
+        ctx.lineWidth = Math.max(0.8, width * 1.2);
 
         const gradient = ctx.createLinearGradient(
           nodeA.x,
@@ -523,8 +434,7 @@ export const NeuralBackground = () => {
           const pulseProgress = Math.sin(pulse.position * Math.PI);
           const pulseSize = Math.max(
             PULSE_SIZE_MIN,
-            (PULSE_SIZE_MIN + pulseProgress * (PULSE_SIZE_MAX - PULSE_SIZE_MIN)) *
-              depthAlpha * 1.2
+            (PULSE_SIZE_MIN + pulseProgress * (PULSE_SIZE_MAX - PULSE_SIZE_MIN)) * 1.2
           );
 
           const pulseGradient = ctx.createRadialGradient(
