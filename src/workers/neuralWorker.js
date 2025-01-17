@@ -7,23 +7,23 @@ const COLORS = [
   "#EC4899", // Pink
 ];
 
-const NODE_COUNT = 50;
-const CONNECTION_DISTANCE = 180;
+const NODE_COUNT = 35;
+const CONNECTION_DISTANCE = 200;
 const CONNECTION_DISTANCE_SQ = CONNECTION_DISTANCE * CONNECTION_DISTANCE;
-const MAX_CONNECTIONS_PER_NODE = 3;
-const BASE_SPEED = 0.003;
-const MAX_SPEED = 0.8;
-const PULSE_SPEED = 0.001;
-const PULSE_SPAWN_RATE = 0.0001;
-const PULSE_MIN_SPACING = 0.8;
+const MAX_CONNECTIONS_PER_NODE = 2;
+const BASE_SPEED = 0.001;
+const MAX_SPEED = 0.3;
+const PULSE_SPEED = 0.0002;
+const PULSE_SPAWN_RATE = 0.00005;
+const PULSE_MIN_SPACING = 0.9;
 const MAX_PULSES_PER_CONNECTION = 1;
 const MAX_GLOW = 1.5;
 const MIN_GLOW = 0.6;
 const GLOW_SPEED = 0.0003;
-const CURVE_INTENSITY = 0.3;  // Controls how curved the lines are
-const MOUSE_INFLUENCE_RADIUS = 150;
-const MOUSE_REPEL_STRENGTH = 0.5;
-const MOUSE_ATTRACT_STRENGTH = 0.2;
+const CURVE_INTENSITY = 0.15;
+const MOUSE_INFLUENCE_RADIUS = 180;
+const MOUSE_REPEL_STRENGTH = 0.15;
+const MOUSE_ATTRACT_STRENGTH = 0.08;
 
 let nodes = [];
 let connections = [];
@@ -71,7 +71,7 @@ function updateNodes(deltaTime, timestamp) {
       
       if (distSq < MOUSE_INFLUENCE_RADIUS * MOUSE_INFLUENCE_RADIUS) {
         const dist = Math.sqrt(distSq);
-        const influence = 1 - (dist / MOUSE_INFLUENCE_RADIUS);
+        const influence = Math.pow(1 - (dist / MOUSE_INFLUENCE_RADIUS), 2);
         
         // Repel when close, attract when further
         const strength = dist < MOUSE_INFLUENCE_RADIUS * 0.5 ? 
@@ -82,25 +82,28 @@ function updateNodes(deltaTime, timestamp) {
       }
     }
 
-    // Bounce off walls
-    if (node.x < 0 || node.x > width) node.vx *= -1;
-    if (node.y < 0 || node.y > height) node.vy *= -1;
+    // Bounce off walls with damping
+    if (node.x < 0 || node.x > width) {
+      node.vx *= -0.8;
+      node.x = Math.max(0, Math.min(width, node.x));
+    }
+    if (node.y < 0 || node.y > height) {
+      node.vy *= -0.8;
+      node.y = Math.max(0, Math.min(height, node.y));
+    }
 
-    // Keep within bounds
-    node.x = Math.max(0, Math.min(width, node.x));
-    node.y = Math.max(0, Math.min(height, node.y));
-
-    // Random velocity changes
-    if (Math.random() < 0.01) {
+    // Random velocity changes (less frequent)
+    if (Math.random() < 0.005) {
       node.vx += (Math.random() - 0.5) * BASE_SPEED;
       node.vy += (Math.random() - 0.5) * BASE_SPEED;
     }
 
-    // Limit speed
+    // Smoother speed limiting
     const speed = Math.sqrt(node.vx * node.vx + node.vy * node.vy);
     if (speed > MAX_SPEED) {
-      node.vx = (node.vx / speed) * MAX_SPEED;
-      node.vy = (node.vy / speed) * MAX_SPEED;
+      const dampingFactor = 1 - Math.min(1, (speed - MAX_SPEED) / MAX_SPEED);
+      node.vx *= dampingFactor;
+      node.vy *= dampingFactor;
     }
   });
 }
@@ -219,19 +222,21 @@ function animate(timestamp) {
     const strength = Math.pow(1 - (dist / CONNECTION_DISTANCE), 1.5);
 
     // Calculate control point for quadratic curve
+    // Adjust curve based on distance for more natural look
+    const curveFactor = Math.min(1, dist / (CONNECTION_DISTANCE * 0.7));
     const midX = (conn.nodeA.x + conn.nodeB.x) / 2;
     const midY = (conn.nodeA.y + conn.nodeB.y) / 2;
-    const perpX = -dy * CURVE_INTENSITY;
-    const perpY = dx * CURVE_INTENSITY;
+    const perpX = -dy * CURVE_INTENSITY * curveFactor;
+    const perpY = dx * CURVE_INTENSITY * curveFactor;
     const cpX = midX + perpX;
     const cpY = midY + perpY;
 
     drawCommands.push({ type: 'beginPath' });
     drawCommands.push({ 
       type: 'strokeStyle',
-      value: `${conn.nodeA.color}${Math.floor(strength * 255).toString(16).padStart(2, '0')}`
+      value: `${conn.nodeA.color}${Math.floor(strength * 180).toString(16).padStart(2, '0')}`
     });
-    drawCommands.push({ type: 'lineWidth', value: 1.2 });
+    drawCommands.push({ type: 'lineWidth', value: 0.7 });
     drawCommands.push({ type: 'moveTo', x: conn.nodeA.x, y: conn.nodeA.y });
     drawCommands.push({ 
       type: 'quadraticCurveTo',
@@ -245,7 +250,6 @@ function animate(timestamp) {
     // Draw pulses along the curve
     conn.pulses.forEach(pulse => {
       const t = pulse.progress;
-      // Quadratic bezier curve point calculation
       const mt = 1 - t;
       const x = mt * mt * conn.nodeA.x + 2 * mt * t * cpX + t * t * conn.nodeB.x;
       const y = mt * mt * conn.nodeA.y + 2 * mt * t * cpY + t * t * conn.nodeB.y;
@@ -253,13 +257,13 @@ function animate(timestamp) {
       drawCommands.push({ type: 'beginPath' });
       drawCommands.push({ 
         type: 'fillStyle',
-        value: `${conn.nodeA.color}${Math.floor(pulse.opacity * 255).toString(16).padStart(2, '0')}`
+        value: `${conn.nodeA.color}${Math.floor(pulse.opacity * 160).toString(16).padStart(2, '0')}`
       });
       drawCommands.push({ 
         type: 'arc',
         x,
         y,
-        radius: pulse.size,
+        radius: pulse.size * 0.7,
         startAngle: 0,
         endAngle: Math.PI * 2
       });
@@ -270,12 +274,15 @@ function animate(timestamp) {
   // Draw nodes
   nodes.forEach(node => {
     drawCommands.push({ type: 'beginPath' });
-    drawCommands.push({ type: 'fillStyle', value: node.color });
+    drawCommands.push({ 
+      type: 'fillStyle', 
+      value: `${node.color}cc` // Fixed 80% opacity for nodes
+    });
     drawCommands.push({ 
       type: 'arc',
       x: node.x,
       y: node.y,
-      radius: node.radius,
+      radius: node.radius * 0.8, // Slightly smaller nodes
       startAngle: 0,
       endAngle: Math.PI * 2
     });
