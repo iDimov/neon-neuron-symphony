@@ -198,7 +198,7 @@ export const CorePrinciplesAlt = () => {
   return (
     <section className="relative py-32 overflow-hidden bg-[#030409]">
       {/* Background Effects */}
-      <div className="absolute inset-0 bg-[#030409]" />
+      {/* <div className="absolute inset-0 bg-[#030409]" />
       <div className="absolute inset-0 bg-gradient-to-b from-purple-500/5 via-transparent to-transparent" />
       <div 
         className="absolute top-0 left-1/4 w-96 h-96 -translate-x-1/2 -translate-y-1/2"
@@ -213,7 +213,7 @@ export const CorePrinciplesAlt = () => {
           background: 'radial-gradient(circle, rgba(59,130,246,0.05) 0%, rgba(59,130,246,0.01) 50%, transparent 70%)',
           filter: 'blur(40px)',
         }}
-      />
+      /> */}
       
       <div className="container relative mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
         <div className="mx-auto">

@@ -50,7 +50,7 @@ const GRADIENT_COLORS = [
   { color: '#EC4899', opacity: 0.05, speed: 0.00006, scale: 1.3 },    // Pink
 ];
 
-const NODE_COUNT = 25;
+const NODE_COUNT = 35;
 const CONNECTION_DISTANCE = 250;
 const MAX_CONNECTIONS_PER_NODE = 2;
 const BASE_SPEED = 0.03;
@@ -694,7 +694,7 @@ export const NeuralBackground = () => {
   }, []);
 
   return (
-    <div className="fixed inset-0 overflow-hidden">
+    <div className="inset-0 overflow-hidden">
       <canvas
         ref={canvasRef}
         className="absolute inset-0 w-full h-full bg-[#030409] transition-opacity duration-1000"
@@ -703,6 +703,7 @@ export const NeuralBackground = () => {
           backdropFilter: "blur(12px)",
           zIndex: -1,
           opacity: opacity,
+          height: '100vh',
           willChange: 'transform',
           transform: 'translateZ(0)'
         }}

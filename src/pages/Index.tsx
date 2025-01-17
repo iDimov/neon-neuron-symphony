@@ -7,6 +7,7 @@ import AnimatedLearningMethods from '@/components/AnimatedLearningMethods';
 import { CorePrinciplesAlt } from '@/components/CorePrinciplesAlt';
 import { DemoSection } from '@/components/DemoSection';
 import { VideoPanel } from '@/components/VideoPanel';
+import { NeuralBackground } from '@/components/NeuralBackground';
 
 const DEMO_SECTIONS = [
   {
@@ -42,6 +43,7 @@ const Index = () => {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-neural-bg">
+      <NeuralBackground />
       <Hero />
       <CorePrinciplesAlt />
       
