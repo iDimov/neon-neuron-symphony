@@ -7,110 +7,106 @@ const COLORS = [
   "#EC4899", // Pink
 ];
 
-const NODE_COUNT = 33;
-const CONNECTION_DISTANCE = 250;
+const NODE_COUNT = 40; // Increased for more liveliness
+const CONNECTION_DISTANCE = 280; // Increased for more connections
 const CONNECTION_DISTANCE_SQ = CONNECTION_DISTANCE * CONNECTION_DISTANCE;
-const MAX_CONNECTIONS_PER_NODE = 2;
-const BASE_SPEED = 0.001;
-const MAX_SPEED = 0.2;
+const MAX_CONNECTIONS_PER_NODE = 3; // Increased for more connections
+const BASE_SPEED = 0.0005; // Reduced for smoother movement
+const MAX_SPEED = 0.08; // Reduced for smoother movement
 const PULSE_SPEED = 0.0005;
-const PULSE_SPAWN_RATE = 0.00004;
-const PULSE_MIN_SPACING = 0.9;
-const MAX_PULSES_PER_CONNECTION = 1;
-const MAX_GLOW = 1.8;
-const MIN_GLOW = 0.7;
+const PULSE_SPAWN_RATE = 0.00006; // Increased for more pulses
+const PULSE_MIN_SPACING = 0.8;
+const MAX_PULSES_PER_CONNECTION = 2; // Increased for more pulses
+const MAX_GLOW = 2.0; // Increased glow
+const MIN_GLOW = 0.8;
 const GLOW_SPEED = 0.0003;
-const CURVE_INTENSITY = 0.08;
-const BREATH_SPEED = 0.0006;
-const LINE_WIDTH = 0.9;
-const CLICK_RADIUS = 30; // Radius for clicking nodes
-const RIPPLE_DURATION = 2000; // Duration of ripple animation in ms (increased)
-const RIPPLE_MAX_RADIUS = 200; // Maximum radius of ripple (increased)
-const SELECTED_NODE_PULSE_INTENSITY = 0.6; // Intensity of selected node pulse (increased)
-const RIPPLE_COUNT = 3; // Number of ripples to create on click
-const RIPPLE_DELAY = 100; // Delay between ripples in ms
-const NODE_EXPLOSION_FORCE = 0.5; // Force to push nearby nodes on click
+const CURVE_INTENSITY = 0.12; // Increased curve intensity
+const BREATH_SPEED = 0.0004; // Slower breathing
+const LINE_WIDTH = 0.8;
+const MOVEMENT_RADIUS = 100; // Radius for random movement
+const DIRECTION_CHANGE_INTERVAL = 8000; // Time between direction changes (ms)
 
 let nodes = [];
 let connections = [];
 let lastTime = 0;
 let startTime = 0;
-let frameCount = 0;
 let width = 0;
 let height = 0;
 let selectedNode = null;
-let ripples = []; // Array to store ripple animations
 
 function initNodes(w, h) {
   width = w;
   height = h;
   nodes = [];
   connections = [];
-  ripples = [];
   
   for (let i = 0; i < NODE_COUNT; i++) {
-    nodes.push({
+    const node = {
       x: Math.random() * width,
       y: Math.random() * height,
-      vx: (Math.random() - 0.5) * BASE_SPEED,
-      vy: (Math.random() - 0.5) * BASE_SPEED,
-      radius: Math.random() * 1.5 + 2.5,
+      vx: 0,
+      vy: 0,
+      radius: Math.random() * 1.5 + 2,
       color: COLORS[Math.floor(Math.random() * COLORS.length)],
       connections: 0,
-      isSelected: false,
+      breathPhase: Math.random() * Math.PI * 2,
+      lastDirectionChange: Math.random() * DIRECTION_CHANGE_INTERVAL,
       targetX: null,
       targetY: null,
-      breathPhase: Math.random() * Math.PI * 2,
-      pulseIntensity: 1
-    });
+      baseX: 0, // Base position for orbital movement
+      baseY: 0,
+      angle: Math.random() * Math.PI * 2, // Current angle in orbital movement
+      orbitSpeed: (Math.random() * 0.00004 + 0.00002) * (Math.random() < 0.5 ? 1 : -1), // Random orbit speed and direction
+      orbitRadius: Math.random() * MOVEMENT_RADIUS * 0.5 + MOVEMENT_RADIUS * 0.5 // Random orbit radius
+    };
+    
+    // Set initial base position
+    node.baseX = node.x;
+    node.baseY = node.y;
+    
+    nodes.push(node);
   }
 }
 
 function updateNodes(deltaTime, timestamp) {
   nodes.forEach(node => {
-    // Basic movement
+    // Update orbital movement
+    node.angle += node.orbitSpeed * deltaTime;
+    const targetX = node.baseX + Math.cos(node.angle) * node.orbitRadius;
+    const targetY = node.baseY + Math.sin(node.angle) * node.orbitRadius;
+    
+    // Smooth movement towards target
+    const dx = targetX - node.x;
+    const dy = targetY - node.y;
+    node.vx = dx * 0.001;
+    node.vy = dy * 0.001;
+    
+    // Update position
     node.x += node.vx * deltaTime;
     node.y += node.vy * deltaTime;
 
-    // Wall bouncing
+    // Occasionally change base position
+    if (timestamp - node.lastDirectionChange > DIRECTION_CHANGE_INTERVAL) {
+      node.baseX = Math.random() * width;
+      node.baseY = Math.random() * height;
+      node.lastDirectionChange = timestamp;
+      
+      // Randomize orbit parameters slightly
+      node.orbitRadius = Math.random() * MOVEMENT_RADIUS * 0.5 + MOVEMENT_RADIUS * 0.5;
+      node.orbitSpeed *= 0.8 + Math.random() * 0.4; // Vary speed by ±20%
+    }
+
+    // Ensure nodes stay within bounds with smooth transition
     if (node.x < 0 || node.x > width) {
-      node.vx *= -0.7;
-      node.x = Math.max(0, Math.min(width, node.x));
+      node.baseX = width / 2;
     }
     if (node.y < 0 || node.y > height) {
-      node.vy *= -0.7;
-      node.y = Math.max(0, Math.min(height, node.y));
+      node.baseY = height / 2;
     }
 
-    // Occasional random movement
-    if (Math.random() < 0.001) {
-      node.vx += (Math.random() - 0.5) * BASE_SPEED;
-      node.vy += (Math.random() - 0.5) * BASE_SPEED;
-    }
-
-    // Simple speed limiting
-    const speedSq = node.vx * node.vx + node.vy * node.vy;
-    if (speedSq > MAX_SPEED * MAX_SPEED) {
-      const scale = MAX_SPEED / Math.sqrt(speedSq);
-      node.vx *= scale;
-      node.vy *= scale;
-    }
-
-    // Update breath phases and pulse intensities
-    node.breathPhase = (node.breathPhase + deltaTime * 0.002) % (Math.PI * 2);
-    if (node.isSelected) {
-      node.pulseIntensity = 1 + SELECTED_NODE_PULSE_INTENSITY + Math.sin(node.breathPhase) * 0.2;
-    }
+    // Update breathing effect
+    node.breathPhase = (node.breathPhase + BREATH_SPEED * deltaTime) % (Math.PI * 2);
   });
-
-  // Update ripples
-  for (let i = ripples.length - 1; i >= 0; i--) {
-    const ripple = ripples[i];
-    const age = timestamp - ripple.startTime;
-    if (age >= RIPPLE_DURATION) {
-      ripples.splice(i, 1);
-    }
-  }
 }
 
 function updateConnections(deltaTime) {
@@ -255,39 +251,9 @@ function animate(timestamp) {
     });
   });
 
-  // Draw ripples with enhanced effect
-  ripples.forEach(ripple => {
-    const age = timestamp - ripple.startTime;
-    const progress = age / RIPPLE_DURATION;
-    const radius = RIPPLE_MAX_RADIUS * progress * (ripple.scale || 1);
-    const opacity = (1 - progress) * 0.7; // Increased base opacity
-
-    // Draw multiple circles for each ripple
-    for (let i = 0; i < 3; i++) {
-      const scaledRadius = radius * (1 - i * 0.1);
-      const scaledOpacity = opacity * (1 - i * 0.3);
-      
-      drawCommands.push({ type: 'beginPath' });
-      drawCommands.push({ 
-        type: 'strokeStyle',
-        value: `${ripple.color}${Math.floor(scaledOpacity * 255).toString(16).padStart(2, '0')}`
-      });
-      drawCommands.push({ type: 'lineWidth', value: 2 - i * 0.5 });
-      drawCommands.push({ 
-        type: 'arc',
-        x: ripple.x,
-        y: ripple.y,
-        radius: scaledRadius,
-        startAngle: 0,
-        endAngle: Math.PI * 2
-      });
-      drawCommands.push({ type: 'stroke' });
-    }
-  });
-
   // Draw nodes with enhanced glow effect
   nodes.forEach(node => {
-    const breathFactor = node.pulseIntensity * (1 + Math.sin(node.breathPhase) * 0.15);
+    const breathFactor = 1 + Math.sin(node.breathPhase) * 0.15;
     
     // Outer glow (largest, most transparent)
     drawCommands.push({ type: 'beginPath' });
