@@ -8,14 +8,17 @@ const COLORS = [
 ];
 
 const NODE_COUNT = 77;
-const CONNECTION_DISTANCE = 150;
+const CONNECTION_DISTANCE = 180;
 const CONNECTION_DISTANCE_SQ = CONNECTION_DISTANCE * CONNECTION_DISTANCE;
 const MAX_CONNECTIONS_PER_NODE = 3;
-const BASE_SPEED = 0.005;
-const MAX_SPEED = 1;
-const PULSE_SPEED = 0.001;
-const PULSE_SPAWN_RATE = 0.002;
-const PULSE_FADE_SPEED = 0.009;
+const BASE_SPEED = 0.003;
+const MAX_SPEED = 0.8;
+const PULSE_SPEED = 0.0003;
+const PULSE_SPAWN_RATE = 0.0006;
+const PULSE_MIN_SPACING = 0.5;
+const MAX_GLOW = 1.5;
+const MIN_GLOW = 0.6;
+const GLOW_SPEED = 0.0003;
 
 let nodes = [];
 let connections = [];
@@ -37,15 +40,20 @@ function initNodes(w, h) {
       y: Math.random() * height,
       vx: (Math.random() - 0.5) * BASE_SPEED,
       vy: (Math.random() - 0.5) * BASE_SPEED,
-      radius: Math.random() * 2 + 2,
+      radius: Math.random() * 1.5 + 2.5,
       color: COLORS[Math.floor(Math.random() * COLORS.length)],
-      connections: 0
+      connections: 0,
+      glowIntensity: Math.random() * (MAX_GLOW - MIN_GLOW) + MIN_GLOW,
+      glowOffset: Math.random() * Math.PI * 2
     });
   }
 }
 
-function updateNodes(deltaTime) {
+function updateNodes(deltaTime, timestamp) {
   nodes.forEach(node => {
+    // Update glow effect
+    node.glowIntensity = MIN_GLOW + (Math.sin(timestamp * GLOW_SPEED + node.glowOffset) * 0.5 + 0.5) * (MAX_GLOW - MIN_GLOW);
+
     node.x += node.vx * deltaTime;
     node.y += node.vy * deltaTime;
 
@@ -80,23 +88,47 @@ function updateConnections(deltaTime) {
   for (let i = connections.length - 1; i >= 0; i--) {
     const conn = connections[i];
     
-    // Update pulses
+    // Update pulses with smooth easing
     for (let j = conn.pulses.length - 1; j >= 0; j--) {
       const pulse = conn.pulses[j];
+      // Linear movement for consistent speed
       pulse.progress += PULSE_SPEED * deltaTime;
-      pulse.opacity = Math.max(0, pulse.opacity - PULSE_FADE_SPEED * deltaTime);
       
-      if (pulse.progress >= 1 || pulse.opacity <= 0) {
+      // Enhanced opacity curve with longer visible period
+      let opacityProgress;
+      if (pulse.progress < 0.15) {
+        // Slower fade in
+        opacityProgress = pulse.progress / 0.15;
+      } else if (pulse.progress > 0.85) {
+        // Slower fade out
+        opacityProgress = (1 - pulse.progress) / 0.15;
+      } else {
+        // Hold full opacity longer
+        opacityProgress = 1;
+      }
+      
+      // Add slight pulse size variation
+      const pulsePhase = Math.sin(pulse.progress * Math.PI);
+      pulse.size = 1.5 + pulsePhase * 0.5;
+      pulse.opacity = Math.max(0, Math.min(1, opacityProgress));
+      
+      if (pulse.progress >= 1) {
         conn.pulses.splice(j, 1);
       }
     }
     
-    // Add new pulses
-    if (Math.random() < PULSE_SPAWN_RATE * deltaTime && conn.pulses.length < 3) {
-      conn.pulses.push({
-        progress: 0,
-        opacity: 1
-      });
+    // Add new pulses with spacing check
+    if (Math.random() < PULSE_SPAWN_RATE * deltaTime && conn.pulses.length < 2) {
+      const lastPulse = conn.pulses[conn.pulses.length - 1];
+      const canSpawn = !lastPulse || lastPulse.progress > PULSE_MIN_SPACING;
+      
+      if (canSpawn) {
+        conn.pulses.push({
+          progress: 0,
+          opacity: 0,
+          size: 1.5
+        });
+      }
     }
     
     // Check if nodes are still close enough
@@ -148,33 +180,30 @@ function animate(timestamp) {
   const deltaTime = timestamp - lastTime;
   lastTime = timestamp;
 
-  updateNodes(deltaTime);
+  updateNodes(deltaTime, timestamp);
   updateConnections(deltaTime);
 
-  // Generate drawing commands
   const drawCommands = [];
-  
   drawCommands.push({ type: 'clear' });
 
-  // Draw connections and pulses
+  // Draw connections first (without glow for better performance)
   connections.forEach(conn => {
     const dx = conn.nodeB.x - conn.nodeA.x;
     const dy = conn.nodeB.y - conn.nodeA.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
-    const strength = 1 - (dist / CONNECTION_DISTANCE);
+    const strength = Math.pow(1 - (dist / CONNECTION_DISTANCE), 1.5);
 
-    // Draw connection line
     drawCommands.push({ type: 'beginPath' });
     drawCommands.push({ 
       type: 'strokeStyle',
       value: `${conn.nodeA.color}${Math.floor(strength * 255).toString(16).padStart(2, '0')}`
     });
-    drawCommands.push({ type: 'lineWidth', value: 1 });
+    drawCommands.push({ type: 'lineWidth', value: 1.2 });
     drawCommands.push({ type: 'moveTo', x: conn.nodeA.x, y: conn.nodeA.y });
     drawCommands.push({ type: 'lineTo', x: conn.nodeB.x, y: conn.nodeB.y });
     drawCommands.push({ type: 'stroke' });
 
-    // Draw pulses
+    // Draw pulses with size variation
     conn.pulses.forEach(pulse => {
       const t = pulse.progress;
       const x = conn.nodeA.x + dx * t;
@@ -189,7 +218,7 @@ function animate(timestamp) {
         type: 'arc',
         x,
         y,
-        radius: 2,
+        radius: pulse.size,
         startAngle: 0,
         endAngle: Math.PI * 2
       });
@@ -197,9 +226,12 @@ function animate(timestamp) {
     });
   });
 
-  // Draw nodes
+  // Draw nodes with optimized glow
   nodes.forEach(node => {
+    // Draw glow (only for nodes, as they're fewer in number)
     drawCommands.push({ type: 'beginPath' });
+    drawCommands.push({ type: 'shadowBlur', value: 10 * node.glowIntensity });
+    drawCommands.push({ type: 'shadowColor', value: node.color });
     drawCommands.push({ type: 'fillStyle', value: node.color });
     drawCommands.push({ 
       type: 'arc',
@@ -210,6 +242,9 @@ function animate(timestamp) {
       endAngle: Math.PI * 2
     });
     drawCommands.push({ type: 'fill' });
+    
+    // Reset shadow for better performance
+    drawCommands.push({ type: 'shadowBlur', value: 0 });
   });
 
   self.postMessage({
