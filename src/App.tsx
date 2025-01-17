@@ -1,3 +1,7 @@
+import React from 'react';
+import { NeuralBackground } from './components/NeuralBackground';
+import BlobBackground from './components/BlobBackground';
+import './styles/blob.css';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -17,6 +21,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
         </Routes>
       </BrowserRouter>
+
     </TooltipProvider>
   </QueryClientProvider>
 );

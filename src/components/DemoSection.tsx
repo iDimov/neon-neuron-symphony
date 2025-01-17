@@ -26,6 +26,57 @@ interface DemoSectionProps {
   className?: string;
 }
 
+const LinearProgress = ({ isActive, onComplete }: { isActive: boolean; onComplete: () => void }) => {
+  const progressRef = useRef(null);
+  const isInView = useInView(progressRef, { once: false });
+  const controls = useAnimation();
+
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+
+    const animate = async () => {
+      if (isActive && isInView) {
+        await controls.start({
+          scaleX: [0, 1],
+          transition: {
+            duration: 15,
+            ease: "linear",
+            times: [0, 1]
+          }
+        });
+        onComplete();
+      } else {
+        controls.stop();
+        await controls.set({ scaleX: 0 });
+      }
+    };
+
+    animate();
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      controls.stop();
+    };
+  }, [isActive, isInView, controls, onComplete]);
+
+  return (
+    <div 
+      ref={progressRef}
+      className="relative h-1.5 rounded-full bg-demo-background/40 shadow-inner overflow-hidden"
+    >
+      <motion.div 
+        className="absolute inset-0 w-full h-full rounded-full bg-gradient-to-r from-demo-blue via-demo-purple to-demo-pink"
+        initial={{ scaleX: 0 }}
+        animate={controls}
+        style={{ 
+          originX: 0,
+          willChange: 'transform',
+        }}
+      />
+    </div>
+  );
+};
+
 export const DemoSection = React.memo(({ 
   title, 
   description, 
@@ -34,42 +85,8 @@ export const DemoSection = React.memo(({
   onClick,
   className 
 }: DemoSectionProps) => {
-  const controls = useAnimation();
-  const progressRef = useRef(null);
-  const isInView = useInView(progressRef, { once: false });
   const Icon = SECTION_ICONS[title as keyof typeof SECTION_ICONS] || Brain;
   const gradient = SECTION_GRADIENTS[title as keyof typeof SECTION_GRADIENTS] || "from-demo-blue to-demo-purple";
-
-  useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
-
-    if (isActive && isInView) {
-      controls.set({ scaleX: 0, originX: 0 });
-      controls.start({
-        scaleX: 1,
-        transition: { 
-          duration: 15,
-          ease: "linear",
-          delay: 0.2
-        }
-      });
-
-      // Use timeout as backup for completion
-      timeoutId = setTimeout(onComplete, 15200); // 15s + 0.2s delay
-    } else {
-      controls.stop();
-      controls.set({ scaleX: 0 });
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-    }
-
-    return () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-    };
-  }, [isActive, isInView, controls, onComplete]);
 
   return (
     <div 
@@ -118,20 +135,7 @@ export const DemoSection = React.memo(({
               {description}
             </p>
             {isActive && (
-              <div 
-                ref={progressRef}
-                className="h-1.5 rounded-full bg-demo-background/40 shadow-inner overflow-hidden"
-              >
-                <motion.div 
-                  className="h-full w-full rounded-full bg-gradient-to-r from-demo-blue via-demo-purple to-demo-pink"
-                  initial={{ scaleX: 0 }}
-                  animate={controls}
-                  style={{ 
-                    originX: 0,
-                    willChange: 'transform',
-                  }}
-                />
-              </div>
+              <LinearProgress isActive={isActive} onComplete={onComplete} />
             )}
           </div>
         </div>

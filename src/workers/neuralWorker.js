@@ -23,10 +23,17 @@ const GLOW_SPEED = 0.0003;
 const CURVE_INTENSITY = 0.08;
 const MOUSE_INFLUENCE_RADIUS = 200;
 const MOUSE_INFLUENCE_RADIUS_SQ = MOUSE_INFLUENCE_RADIUS * MOUSE_INFLUENCE_RADIUS;
-const MOUSE_REPEL_STRENGTH = 0.1;
-const MOUSE_ATTRACT_STRENGTH = 0.05;
+const MOUSE_REPEL_STRENGTH = 0.15;
+const MOUSE_ATTRACT_STRENGTH = 0.08;
 const BREATH_SPEED = 0.0006;
 const LINE_WIDTH = 0.9;
+const CLICK_RADIUS = 30; // Radius for clicking nodes
+const RIPPLE_DURATION = 2000; // Duration of ripple animation in ms (increased)
+const RIPPLE_MAX_RADIUS = 200; // Maximum radius of ripple (increased)
+const SELECTED_NODE_PULSE_INTENSITY = 0.6; // Intensity of selected node pulse (increased)
+const RIPPLE_COUNT = 3; // Number of ripples to create on click
+const RIPPLE_DELAY = 100; // Delay between ripples in ms
+const NODE_EXPLOSION_FORCE = 0.5; // Force to push nearby nodes on click
 
 let nodes = [];
 let connections = [];
@@ -38,12 +45,15 @@ let height = 0;
 let mouseX = null;
 let mouseY = null;
 let isMouseOver = false;
+let selectedNode = null;
+let ripples = []; // Array to store ripple animations
 
 function initNodes(w, h) {
   width = w;
   height = h;
   nodes = [];
   connections = [];
+  ripples = [];
   
   for (let i = 0; i < NODE_COUNT; i++) {
     nodes.push({
@@ -54,9 +64,11 @@ function initNodes(w, h) {
       radius: Math.random() * 1.5 + 2.5,
       color: COLORS[Math.floor(Math.random() * COLORS.length)],
       connections: 0,
-      glowIntensity: Math.random() * (MAX_GLOW - MIN_GLOW) + MIN_GLOW,
-      glowOffset: Math.random() * Math.PI * 2,
-      breathPhase: Math.random() * Math.PI * 2
+      isSelected: false,
+      targetX: null,
+      targetY: null,
+      breathPhase: Math.random() * Math.PI * 2,
+      pulseIntensity: 1
     });
   }
 }
@@ -108,7 +120,22 @@ function updateNodes(deltaTime, timestamp) {
       node.vx *= scale;
       node.vy *= scale;
     }
+
+    // Update breath phases and pulse intensities
+    node.breathPhase = (node.breathPhase + deltaTime * 0.002) % (Math.PI * 2);
+    if (node.isSelected) {
+      node.pulseIntensity = 1 + SELECTED_NODE_PULSE_INTENSITY + Math.sin(node.breathPhase) * 0.2;
+    }
   });
+
+  // Update ripples
+  for (let i = ripples.length - 1; i >= 0; i--) {
+    const ripple = ripples[i];
+    const age = timestamp - ripple.startTime;
+    if (age >= RIPPLE_DURATION) {
+      ripples.splice(i, 1);
+    }
+  }
 }
 
 function updateConnections(deltaTime) {
@@ -187,6 +214,80 @@ function updateConnections(deltaTime) {
   });
 }
 
+// Handle mouse click
+function handleClick(x, y) {
+  let clickedNode = null;
+  let minDist = CLICK_RADIUS * CLICK_RADIUS;
+
+  nodes.forEach(node => {
+    const dx = node.x - x;
+    const dy = node.y - y;
+    const distSq = dx * dx + dy * dy;
+    
+    if (distSq < minDist) {
+      minDist = distSq;
+      clickedNode = node;
+    }
+
+    // Add explosion effect to nearby nodes
+    if (distSq < MOUSE_INFLUENCE_RADIUS_SQ) {
+      const dist = Math.sqrt(distSq);
+      const force = (1 - dist / MOUSE_INFLUENCE_RADIUS) * NODE_EXPLOSION_FORCE;
+      const angle = Math.atan2(dy, dx);
+      node.vx += Math.cos(angle) * force;
+      node.vy += Math.sin(angle) * force;
+    }
+  });
+
+  // Create multiple ripples with delay
+  for (let i = 0; i < RIPPLE_COUNT; i++) {
+    setTimeout(() => {
+      ripples.push({
+        x: x,
+        y: y,
+        startTime: performance.now(),
+        color: clickedNode ? clickedNode.color : COLORS[Math.floor(Math.random() * COLORS.length)],
+        scale: 1 - (i * 0.2) // Each subsequent ripple is slightly smaller
+      });
+    }, i * RIPPLE_DELAY);
+  }
+
+  if (clickedNode) {
+    // Reset all nodes
+    nodes.forEach(node => {
+      node.isSelected = false;
+      node.pulseIntensity = 1;
+      node.breathPhase = Math.random() * Math.PI * 2; // Randomize breath phase for variety
+    });
+    
+    // Enhance selected node
+    clickedNode.isSelected = true;
+    clickedNode.pulseIntensity = 1 + SELECTED_NODE_PULSE_INTENSITY;
+    clickedNode.radius *= 1.2; // Make selected node slightly larger
+    selectedNode = clickedNode;
+
+    // Create new connections from selected node
+    nodes.forEach(otherNode => {
+      if (otherNode !== clickedNode && otherNode.connections < MAX_CONNECTIONS_PER_NODE) {
+        const dx = otherNode.x - clickedNode.x;
+        const dy = otherNode.y - clickedNode.y;
+        const distSq = dx * dx + dy * dy;
+        
+        if (distSq <= CONNECTION_DISTANCE_SQ) {
+          connections.push({
+            nodeA: clickedNode,
+            nodeB: otherNode,
+            pulses: []
+          });
+        }
+      }
+    });
+  } else if (selectedNode) {
+    selectedNode.targetX = x;
+    selectedNode.targetY = y;
+  }
+}
+
 function animate(timestamp) {
   if (!startTime) startTime = timestamp;
   const deltaTime = timestamp - lastTime;
@@ -253,9 +354,39 @@ function animate(timestamp) {
     });
   });
 
-  // Draw nodes with glow effect
+  // Draw ripples with enhanced effect
+  ripples.forEach(ripple => {
+    const age = timestamp - ripple.startTime;
+    const progress = age / RIPPLE_DURATION;
+    const radius = RIPPLE_MAX_RADIUS * progress * (ripple.scale || 1);
+    const opacity = (1 - progress) * 0.7; // Increased base opacity
+
+    // Draw multiple circles for each ripple
+    for (let i = 0; i < 3; i++) {
+      const scaledRadius = radius * (1 - i * 0.1);
+      const scaledOpacity = opacity * (1 - i * 0.3);
+      
+      drawCommands.push({ type: 'beginPath' });
+      drawCommands.push({ 
+        type: 'strokeStyle',
+        value: `${ripple.color}${Math.floor(scaledOpacity * 255).toString(16).padStart(2, '0')}`
+      });
+      drawCommands.push({ type: 'lineWidth', value: 2 - i * 0.5 });
+      drawCommands.push({ 
+        type: 'arc',
+        x: ripple.x,
+        y: ripple.y,
+        radius: scaledRadius,
+        startAngle: 0,
+        endAngle: Math.PI * 2
+      });
+      drawCommands.push({ type: 'stroke' });
+    }
+  });
+
+  // Draw nodes with enhanced glow effect
   nodes.forEach(node => {
-    const breathFactor = 1 + Math.sin(node.breathPhase) * 0.15;
+    const breathFactor = node.pulseIntensity * (1 + Math.sin(node.breathPhase) * 0.15);
     
     // Outer glow (largest, most transparent)
     drawCommands.push({ type: 'beginPath' });

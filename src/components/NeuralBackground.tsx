@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { useInView } from 'react-intersection-observer';
 // @ts-ignore
 import NeuralWorker from '../workers/neuralWorker.js?worker';
+import BlobBackground from './BlobBackground';
 
 export const NeuralBackground = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -170,9 +171,10 @@ export const NeuralBackground = () => {
   }, [inView]);
 
   return (
-    <canvas
-      ref={(el) => {
-        canvasRef.current = el;
+    <>
+      <canvas
+        ref={(el) => {
+          canvasRef.current = el;
         inViewRef(el);
       }}
       style={{
@@ -181,8 +183,10 @@ export const NeuralBackground = () => {
         left: 0,
         width: "100%",
         height: "100%",
-        transition: "opacity 0.3s ease-in-out",
-      }}
-    />
+        zIndex: 0,
+          transition: "opacity 0.3s ease-in-out",
+        }}
+      />
+    </>
   );
 };
