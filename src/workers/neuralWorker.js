@@ -7,7 +7,7 @@ const COLORS = [
   "#EC4899", // Pink
 ];
 
-const NODE_COUNT = 25;
+const NODE_COUNT = 33;
 const CONNECTION_DISTANCE = 250;
 const CONNECTION_DISTANCE_SQ = CONNECTION_DISTANCE * CONNECTION_DISTANCE;
 const MAX_CONNECTIONS_PER_NODE = 2;
@@ -21,10 +21,6 @@ const MAX_GLOW = 1.8;
 const MIN_GLOW = 0.7;
 const GLOW_SPEED = 0.0003;
 const CURVE_INTENSITY = 0.08;
-const MOUSE_INFLUENCE_RADIUS = 200;
-const MOUSE_INFLUENCE_RADIUS_SQ = MOUSE_INFLUENCE_RADIUS * MOUSE_INFLUENCE_RADIUS;
-const MOUSE_REPEL_STRENGTH = 0.15;
-const MOUSE_ATTRACT_STRENGTH = 0.08;
 const BREATH_SPEED = 0.0006;
 const LINE_WIDTH = 0.9;
 const CLICK_RADIUS = 30; // Radius for clicking nodes
@@ -42,9 +38,6 @@ let startTime = 0;
 let frameCount = 0;
 let width = 0;
 let height = 0;
-let mouseX = null;
-let mouseY = null;
-let isMouseOver = false;
 let selectedNode = null;
 let ripples = []; // Array to store ripple animations
 
@@ -78,24 +71,6 @@ function updateNodes(deltaTime, timestamp) {
     // Basic movement
     node.x += node.vx * deltaTime;
     node.y += node.vy * deltaTime;
-
-    // Mouse interaction with optimized calculations
-    if (isMouseOver && mouseX !== null && mouseY !== null) {
-      const dx = node.x - mouseX;
-      const dy = node.y - mouseY;
-      const distSq = dx * dx + dy * dy;
-      
-      if (distSq < MOUSE_INFLUENCE_RADIUS_SQ) {
-        const dist = Math.sqrt(distSq);
-        const influence = 1 - (dist / MOUSE_INFLUENCE_RADIUS); // Simplified falloff
-        const strength = dist < MOUSE_INFLUENCE_RADIUS * 0.5 ? 
-          MOUSE_REPEL_STRENGTH : -MOUSE_ATTRACT_STRENGTH;
-        
-        const factor = strength * influence * deltaTime / dist;
-        node.vx += dx * factor;
-        node.vy += dy * factor;
-      }
-    }
 
     // Wall bouncing
     if (node.x < 0 || node.x > width) {
@@ -212,80 +187,6 @@ function updateConnections(deltaTime) {
       }
     }
   });
-}
-
-// Handle mouse click
-function handleClick(x, y) {
-  let clickedNode = null;
-  let minDist = CLICK_RADIUS * CLICK_RADIUS;
-
-  nodes.forEach(node => {
-    const dx = node.x - x;
-    const dy = node.y - y;
-    const distSq = dx * dx + dy * dy;
-    
-    if (distSq < minDist) {
-      minDist = distSq;
-      clickedNode = node;
-    }
-
-    // Add explosion effect to nearby nodes
-    if (distSq < MOUSE_INFLUENCE_RADIUS_SQ) {
-      const dist = Math.sqrt(distSq);
-      const force = (1 - dist / MOUSE_INFLUENCE_RADIUS) * NODE_EXPLOSION_FORCE;
-      const angle = Math.atan2(dy, dx);
-      node.vx += Math.cos(angle) * force;
-      node.vy += Math.sin(angle) * force;
-    }
-  });
-
-  // Create multiple ripples with delay
-  for (let i = 0; i < RIPPLE_COUNT; i++) {
-    setTimeout(() => {
-      ripples.push({
-        x: x,
-        y: y,
-        startTime: performance.now(),
-        color: clickedNode ? clickedNode.color : COLORS[Math.floor(Math.random() * COLORS.length)],
-        scale: 1 - (i * 0.2) // Each subsequent ripple is slightly smaller
-      });
-    }, i * RIPPLE_DELAY);
-  }
-
-  if (clickedNode) {
-    // Reset all nodes
-    nodes.forEach(node => {
-      node.isSelected = false;
-      node.pulseIntensity = 1;
-      node.breathPhase = Math.random() * Math.PI * 2; // Randomize breath phase for variety
-    });
-    
-    // Enhance selected node
-    clickedNode.isSelected = true;
-    clickedNode.pulseIntensity = 1 + SELECTED_NODE_PULSE_INTENSITY;
-    clickedNode.radius *= 1.2; // Make selected node slightly larger
-    selectedNode = clickedNode;
-
-    // Create new connections from selected node
-    nodes.forEach(otherNode => {
-      if (otherNode !== clickedNode && otherNode.connections < MAX_CONNECTIONS_PER_NODE) {
-        const dx = otherNode.x - clickedNode.x;
-        const dy = otherNode.y - clickedNode.y;
-        const distSq = dx * dx + dy * dy;
-        
-        if (distSq <= CONNECTION_DISTANCE_SQ) {
-          connections.push({
-            nodeA: clickedNode,
-            nodeB: otherNode,
-            pulses: []
-          });
-        }
-      }
-    });
-  } else if (selectedNode) {
-    selectedNode.targetX = x;
-    selectedNode.targetY = y;
-  }
 }
 
 function animate(timestamp) {
@@ -454,18 +355,6 @@ self.onmessage = function(e) {
       break;
     case 'resize':
       initNodes(e.data.width, e.data.height);
-      break;
-    case 'mousemove':
-      mouseX = e.data.x;
-      mouseY = e.data.y;
-      break;
-    case 'mouseenter':
-      isMouseOver = true;
-      break;
-    case 'mouseleave':
-      isMouseOver = false;
-      mouseX = null;
-      mouseY = null;
       break;
   }
 }; 
