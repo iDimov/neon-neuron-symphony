@@ -7,24 +7,25 @@ const COLORS = [
   "#EC4899", // Pink
 ];
 
-const NODE_COUNT = 40; // Increased for more liveliness
-const CONNECTION_DISTANCE = 280; // Increased for more connections
+const NODE_COUNT = 40;
+const CONNECTION_DISTANCE = 280;
 const CONNECTION_DISTANCE_SQ = CONNECTION_DISTANCE * CONNECTION_DISTANCE;
-const MAX_CONNECTIONS_PER_NODE = 3; // Increased for more connections
-const BASE_SPEED = 0.0005; // Reduced for smoother movement
-const MAX_SPEED = 0.08; // Reduced for smoother movement
-const PULSE_SPEED = 0.0005;
-const PULSE_SPAWN_RATE = 0.00006; // Increased for more pulses
+const MAX_CONNECTIONS_PER_NODE = 3;
+const BASE_MOVEMENT_SPEED = 0.002; // Increased for more movement
+const PULSE_SPEED = 0.0006;
+const PULSE_SPAWN_RATE = 0.00008; // Increased for more pulses
 const PULSE_MIN_SPACING = 0.8;
-const MAX_PULSES_PER_CONNECTION = 2; // Increased for more pulses
-const MAX_GLOW = 2.0; // Increased glow
+const MAX_PULSES_PER_CONNECTION = 2;
+const MAX_GLOW = 2.0;
 const MIN_GLOW = 0.8;
 const GLOW_SPEED = 0.0003;
-const CURVE_INTENSITY = 0.12; // Increased curve intensity
-const BREATH_SPEED = 0.0004; // Slower breathing
+const CURVE_INTENSITY = 0.09;
+const BREATH_SPEED = 0.0008;
 const LINE_WIDTH = 0.8;
-const MOVEMENT_RADIUS = 100; // Radius for random movement
-const DIRECTION_CHANGE_INTERVAL = 8000; // Time between direction changes (ms)
+const MOVEMENT_RADIUS = 5000; // Increased for wider orbits
+const DIRECTION_CHANGE_INTERVAL = 8000; // Reduced for more frequent changes
+const MAX_ORBIT_SPEED = 0.002; // Increased for more movement
+const MIN_ORBIT_SPEED = 0.0001; // Increased for more movement
 
 let nodes = [];
 let connections = [];
@@ -53,11 +54,11 @@ function initNodes(w, h) {
       lastDirectionChange: Math.random() * DIRECTION_CHANGE_INTERVAL,
       targetX: null,
       targetY: null,
-      baseX: 0, // Base position for orbital movement
+      baseX: 0,
       baseY: 0,
-      angle: Math.random() * Math.PI * 2, // Current angle in orbital movement
-      orbitSpeed: (Math.random() * 0.00004 + 0.00002) * (Math.random() < 0.5 ? 1 : -1), // Random orbit speed and direction
-      orbitRadius: Math.random() * MOVEMENT_RADIUS * 0.5 + MOVEMENT_RADIUS * 0.5 // Random orbit radius
+      angle: Math.random() * Math.PI * 2,
+      orbitSpeed: MIN_ORBIT_SPEED + Math.random() * (MAX_ORBIT_SPEED - MIN_ORBIT_SPEED),
+      orbitRadius: MOVEMENT_RADIUS * (0.3 + Math.random() * 0.7)
     };
     
     // Set initial base position
@@ -69,43 +70,50 @@ function initNodes(w, h) {
 }
 
 function updateNodes(deltaTime, timestamp) {
+  const maxDelta = 50;
+  const normalizedDelta = Math.min(deltaTime, maxDelta);
+
   nodes.forEach(node => {
-    // Update orbital movement
-    node.angle += node.orbitSpeed * deltaTime;
+    // Update orbital movement with normalized delta
+    node.angle += node.orbitSpeed * normalizedDelta;
     const targetX = node.baseX + Math.cos(node.angle) * node.orbitRadius;
     const targetY = node.baseY + Math.sin(node.angle) * node.orbitRadius;
     
-    // Smooth movement towards target
+    // Smooth movement towards target with speed limit
     const dx = targetX - node.x;
     const dy = targetY - node.y;
-    node.vx = dx * 0.001;
-    node.vy = dy * 0.001;
+    const dist = Math.sqrt(dx * dx + dy * dy);
     
-    // Update position
-    node.x += node.vx * deltaTime;
-    node.y += node.vy * deltaTime;
+    if (dist > 0.01) {
+      const speed = Math.min(BASE_MOVEMENT_SPEED * normalizedDelta, dist);
+      node.x += (dx / dist) * speed;
+      node.y += (dy / dist) * speed;
+    }
 
-    // Occasionally change base position
+    // Occasionally change base position with more dynamic movement
     if (timestamp - node.lastDirectionChange > DIRECTION_CHANGE_INTERVAL) {
-      node.baseX = Math.random() * width;
-      node.baseY = Math.random() * height;
+      // More dynamic base position change
+      const newBaseX = Math.random() * width;
+      const newBaseY = Math.random() * height;
+      node.baseX = node.baseX * 0.6 + newBaseX * 0.4; // More aggressive movement
+      node.baseY = node.baseY * 0.6 + newBaseY * 0.4;
       node.lastDirectionChange = timestamp;
       
-      // Randomize orbit parameters slightly
-      node.orbitRadius = Math.random() * MOVEMENT_RADIUS * 0.5 + MOVEMENT_RADIUS * 0.5;
-      node.orbitSpeed *= 0.8 + Math.random() * 0.4; // Vary speed by ±20%
+      // Randomize orbit parameters for more variety
+      node.orbitSpeed = MIN_ORBIT_SPEED + Math.random() * (MAX_ORBIT_SPEED - MIN_ORBIT_SPEED);
+      node.orbitRadius = MOVEMENT_RADIUS * (0.3 + Math.random() * 0.7); // More varied radiuses
     }
 
-    // Ensure nodes stay within bounds with smooth transition
-    if (node.x < 0 || node.x > width) {
-      node.baseX = width / 2;
-    }
-    if (node.y < 0 || node.y > height) {
-      node.baseY = height / 2;
+    // Smooth boundary handling with larger padding
+    const padding = 30;
+    if (node.x < padding || node.x > width - padding || 
+        node.y < padding || node.y > height - padding) {
+      node.baseX = width / 2 + (Math.random() - 0.5) * 200; // Wider spread
+      node.baseY = height / 2 + (Math.random() - 0.5) * 200;
     }
 
     // Update breathing effect
-    node.breathPhase = (node.breathPhase + BREATH_SPEED * deltaTime) % (Math.PI * 2);
+    node.breathPhase = (node.breathPhase + BREATH_SPEED * normalizedDelta) % (Math.PI * 2);
   });
 }
 

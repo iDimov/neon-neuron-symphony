@@ -19,7 +19,7 @@ const SECTION_GRADIENTS = {
 
 interface DemoSectionProps {
   title: string;
-  description: string;
+  description: string[];
   isActive: boolean;
   onComplete: () => void;
   onClick: () => void;
@@ -118,15 +118,6 @@ export const DemoSection = React.memo(({
     >
       <div className="p-4">
         <div className="flex items-center gap-3">
-          <div className={cn(
-            "w-8 h-8 rounded-lg bg-gradient-to-br flex items-center justify-center transition-all duration-500 group-hover:scale-105",
-            isActive ? gradient : "from-white/5 to-white/10"
-          )}>
-            <Icon className={cn(
-              "w-4 h-4 transition-all duration-500",
-              isActive ? "text-white" : "text-white/50"
-            )} />
-          </div>
           <h3 className={cn(
             "text-lg font-semibold bg-gradient-to-r from-white to-demo-purple bg-clip-text text-transparent",
             "transition-all duration-300",
@@ -140,10 +131,15 @@ export const DemoSection = React.memo(({
           "transition-all duration-500 overflow-hidden",
           isActive ? "max-h-[300px] opacity-100" : "max-h-0 opacity-0"
         )}>
-          <div className="mt-3 pl-11">
-            <p className="text-demo-text text-sm leading-relaxed mb-4">
-              {description}
-            </p>
+          <div className="mt-3">
+            <ul className="space-y-2 mb-4">
+              {description.map((item, index) => (
+                <li key={index} className="flex items-start gap-2 text-sm text-demo-text">
+                  <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-gradient-to-r from-demo-blue to-demo-purple shrink-0" />
+                  {item}
+                </li>
+              ))}
+            </ul>
             {isActive && (
               <LinearProgress isActive={isActive} onComplete={onComplete} />
             )}

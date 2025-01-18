@@ -8,19 +8,39 @@ import { VideoPanel } from '@/components/VideoPanel';
 const DEMO_SECTIONS = [
   {
     title: "Planning Your Journey",
-    description: "Personalized learning paths tailored to your IT career goals. Our AI analyzes your current level and creates a custom roadmap for your success."
+    description: [
+      "Personalized learning paths tailored to your IT career goals",
+      "AI analysis of your current English proficiency level",
+      "Custom roadmap creation based on your goals",
+      "Adaptive learning schedule that fits your pace"
+    ]
   },
   {
     title: "Interactive Learning Hub",
-    description: "Engage with real-world IT scenarios, code reviews, and technical discussions. Practice your English in context that matters for your work."
+    description: [
+      "Real-world IT scenarios and code reviews",
+      "Technical discussions in English",
+      "Practice with industry-specific terminology",
+      "Hands-on programming challenges"
+    ]
   },
   {
     title: "Progress Tracking & Analytics",
-    description: "Monitor your improvement with detailed analytics. Track your vocabulary growth, speaking confidence, and professional communication skills."
+    description: [
+      "Detailed analytics of your learning progress",
+      "Vocabulary growth monitoring",
+      "Speaking confidence metrics",
+      "Professional communication skills assessment"
+    ]
   },
   {
     title: "Global Tech Community",
-    description: "Connect with IT professionals worldwide. Practice your English in real conversations about technology, coding, and industry trends."
+    description: [
+      "Connect with IT professionals worldwide",
+      "Real conversations about technology",
+      "Coding discussions and peer reviews",
+      "Industry trends and best practices"
+    ]
   }
 ];
 
