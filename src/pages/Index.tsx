@@ -66,7 +66,7 @@ export default function Index() {
                          border border-purple-500/20 rounded-full bg-purple-500/10">
               <span className="text-sm font-medium bg-gradient-to-r from-purple-400 to-blue-400 
                            bg-clip-text text-transparent">
-                How it works. Quick Tour
+                Quick Tour
               </span>
             </div>
             <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold bg-gradient-to-r 
