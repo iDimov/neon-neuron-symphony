@@ -15,7 +15,7 @@ let height = 0;
 let lastTime = 0;
 let startTime = 0;
 
-const NODE_COUNT = 40;
+const NODE_COUNT = 33;
 const CONNECTION_DISTANCE = 300;
 const CONNECTION_DISTANCE_SQ = CONNECTION_DISTANCE * CONNECTION_DISTANCE;
 const MAX_CONNECTIONS_PER_NODE = 3;

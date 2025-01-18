@@ -8,7 +8,7 @@ import { PlasmaBackground } from '@/components/PlasmaBackground';
 
 const DEMO_SECTIONS = [
   {
-    title: "Planning Your Journey",
+    title: "Plan Your Journey",
     description: [
       "Personalized learning paths tailored to your IT career goals",
       "AI analysis of your current English proficiency level",
@@ -17,7 +17,7 @@ const DEMO_SECTIONS = [
     ]
   },
   {
-    title: "Interactive Learning Hub",
+    title: "Personalized Learning",
     description: [
       "Real-world IT scenarios and code reviews",
       "Technical discussions in English",
@@ -26,7 +26,7 @@ const DEMO_SECTIONS = [
     ]
   },
   {
-    title: "Progress Tracking & Analytics",
+    title: "Tracking & Analytics",
     description: [
       "Detailed analytics of your learning progress",
       "Vocabulary growth monitoring",
@@ -35,7 +35,7 @@ const DEMO_SECTIONS = [
     ]
   },
   {
-    title: "Global Tech Community",
+    title: "Tech Community",
     description: [
       "Connect with IT professionals worldwide",
       "Real conversations about technology",
@@ -49,7 +49,7 @@ export default function Index() {
   const [activeSection, setActiveSection] = useState(0);
 
   const handleSectionComplete = () => {
-    setActiveSection(prev => (prev + 1) % DEMO_SECTIONS.length);
+    setActiveSection(current => (current + 1) % DEMO_SECTIONS.length);
   };
 
   return (

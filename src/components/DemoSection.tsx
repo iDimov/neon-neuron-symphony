@@ -3,20 +3,6 @@ import { cn } from "@/lib/utils";
 import { Brain, BookOpen, ChartBar, Users } from 'lucide-react';
 import { motion, useAnimation, useInView } from 'framer-motion';
 
-const SECTION_ICONS = {
-  "Planning Your Journey": Brain,
-  "Interactive Learning Hub": BookOpen,
-  "Progress Tracking & Analytics": ChartBar,
-  "Global Tech Community": Users
-};
-
-const SECTION_GRADIENTS = {
-  "Planning Your Journey": "from-demo-blue to-demo-purple",
-  "Interactive Learning Hub": "from-demo-purple to-demo-pink",
-  "Progress Tracking & Analytics": "from-demo-pink to-demo-purple",
-  "Global Tech Community": "from-demo-purple to-demo-blue"
-};
-
 interface DemoSectionProps {
   title: string;
   description: string[];
@@ -83,48 +69,36 @@ export const DemoSection = React.memo(({
   isActive,
   onComplete,
   onClick,
-  className 
+  className
 }: DemoSectionProps) => {
-  const Icon = SECTION_ICONS[title as keyof typeof SECTION_ICONS] || Brain;
-  const gradient = SECTION_GRADIENTS[title as keyof typeof SECTION_GRADIENTS] || "from-demo-blue to-demo-purple";
-  const [isExpanded, setIsExpanded] = useState(false);
-
-  useEffect(() => {
-    if (isActive) {
-      setIsExpanded(true);
-    } else {
-      const timer = setTimeout(() => setIsExpanded(false), 500);
-      return () => clearTimeout(timer);
-    }
-  }, [isActive]);
-
-  const handleClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    onClick();
-    setIsExpanded(true);
-  };
-
   return (
     <div 
       className={cn(
-        "rounded-xl transition-all duration-500 cursor-pointer backdrop-blur-sm overflow-hidden group",
+        "rounded-xl transition-all duration-500 cursor-pointer backdrop-blur-sm overflow-hidden group relative",
         isActive ? "bg-demo-background/90 shadow-lg shadow-demo-purple/10" : "bg-demo-background/40 hover:bg-demo-background/60",
         "border border-transparent hover:border-demo-purple/30",
         className
       )}
-      onClick={handleClick}
+      onClick={onClick}
       role="button"
       style={{ willChange: 'transform, opacity, box-shadow' }}
     >
       <div className="p-4">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between">
           <h3 className={cn(
-            "text-lg font-semibold bg-gradient-to-r from-white to-demo-purple bg-clip-text text-transparent",
+            "text-xl font-semibold bg-gradient-to-r from-white to-demo-purple bg-clip-text text-transparent",
             "transition-all duration-300",
             isActive ? "mb-3" : "mb-0"
           )}>
             {title}
           </h3>
+          {isActive && (
+            <div className="w-0 h-0 
+                          border-t-[10px] border-t-transparent 
+                          border-l-[16px] border-l-demo-purple/60 
+                          border-b-[10px] border-b-transparent 
+                          ml-4 animate-pulse"/>
+          )}
         </div>
 
         <div className={cn(

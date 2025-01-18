@@ -7,10 +7,10 @@ interface VideoPanelProps {
 }
 
 const VIDEO_MAPPING = {
-  "Planning Your Journey": "/videos/video-1.mp4",
-  "Interactive Learning Hub": "/videos/video-2.mp4",
-  "Progress Tracking & Analytics": "/videos/video-3.mp4",
-  "Global Tech Community": "/videos/video-4.mp4"
+  "Planning  Journey": "/videos/video-1.mp4",
+  "Personalized Learning": "/videos/video-2.mp4",
+  "Tracking & Analytics": "/videos/video-3.mp4",
+  "Tech Community": "/videos/video-4.mp4"
 };
 
 export const VideoPanel: React.FC<VideoPanelProps> = ({ activeSection, className }) => {
