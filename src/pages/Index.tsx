@@ -4,6 +4,7 @@ import { CorePrinciplesAlt } from '@/components/CorePrinciplesAlt';
 import { NeuralBackground } from '@/components/NeuralBackground';
 import { DemoSection } from '@/components/DemoSection';
 import { VideoPanel } from '@/components/VideoPanel';
+import { PlasmaBackground } from '@/components/PlasmaBackground';
 
 const DEMO_SECTIONS = [
   {
@@ -60,8 +61,7 @@ const Index = () => {
       <NeuralBackground />
       <Hero />
       <CorePrinciplesAlt />
-      
-      {/* Demo Section */}
+
       <section className="relative py-32">
         <div className="max-w-[1400px] mx-auto px-8">
           {/* Section Header */}
@@ -76,7 +76,7 @@ const Index = () => {
             <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold bg-gradient-to-r 
                          from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-8
                          tracking-tight leading-[1.1]">
-             Your English Evolution: <br /> A Quick Overview
+             Your English Evolution: <br />
             </h2>
             <p className="text-lg sm:text-xl text-slate-300/90 max-w-2xl mx-auto">
               Discover how our AI-Powered Platform Makes Learning Engaging and Practical.
