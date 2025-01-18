@@ -16,12 +16,15 @@ const LinearProgress = ({ isActive, onComplete }: { isActive: boolean; onComplet
   const progressRef = useRef(null);
   const isInView = useInView(progressRef, { once: false });
   const controls = useAnimation();
+  const progressStartTime = useRef<number | null>(null);
 
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
-
     const animate = async () => {
       if (isActive && isInView) {
+        // Reset and start new animation
+        await controls.set({ scaleX: 0 });
+        progressStartTime.current = Date.now();
+        
         await controls.start({
           scaleX: [0, 1],
           transition: {
@@ -30,18 +33,23 @@ const LinearProgress = ({ isActive, onComplete }: { isActive: boolean; onComplet
             times: [0, 1]
           }
         });
-        onComplete();
+
+        // Only trigger onComplete if enough time has passed (prevents triggering on manual clicks)
+        if (progressStartTime.current && Date.now() - progressStartTime.current > 1000) {
+          onComplete();
+        }
       } else {
         controls.stop();
         await controls.set({ scaleX: 0 });
+        progressStartTime.current = null;
       }
     };
 
     animate();
 
     return () => {
-      if (timeoutId) clearTimeout(timeoutId);
       controls.stop();
+      progressStartTime.current = null;
     };
   }, [isActive, isInView, controls, onComplete]);
 

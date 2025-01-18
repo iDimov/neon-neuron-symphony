@@ -46,10 +46,12 @@ export const DemoTour = () => {
   const [activeSection, setActiveSection] = useState(0);
 
   const handleSectionComplete = () => {
+    console.log("handleSectionComplete", activeSection);
     setActiveSection(current => (current + 1) % DEMO_SECTIONS.length);
   };
 
   const handleSectionClick = (index: number) => {
+    console.log("handleSectionClick", index);
     setActiveSection(index);
   };
 
