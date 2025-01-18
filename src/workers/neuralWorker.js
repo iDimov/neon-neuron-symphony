@@ -7,33 +7,30 @@ const COLORS = [
   "#EC4899", // Pink
 ];
 
-const NODE_COUNT = 40;
-const CONNECTION_DISTANCE = 280;
-const CONNECTION_DISTANCE_SQ = CONNECTION_DISTANCE * CONNECTION_DISTANCE;
-const MAX_CONNECTIONS_PER_NODE = 3;
-const BASE_MOVEMENT_SPEED = 0.002; // Increased for more movement
-const PULSE_SPEED = 0.0006;
-const PULSE_SPAWN_RATE = 0.00008; // Increased for more pulses
-const PULSE_MIN_SPACING = 0.8;
-const MAX_PULSES_PER_CONNECTION = 2;
-const MAX_GLOW = 2.0;
-const MIN_GLOW = 0.8;
-const GLOW_SPEED = 0.0003;
-const CURVE_INTENSITY = 0.09;
-const BREATH_SPEED = 0.0008;
-const LINE_WIDTH = 0.8;
-const MOVEMENT_RADIUS = 5000; // Increased for wider orbits
-const DIRECTION_CHANGE_INTERVAL = 8000; // Reduced for more frequent changes
-const MAX_ORBIT_SPEED = 0.002; // Increased for more movement
-const MIN_ORBIT_SPEED = 0.0001; // Increased for more movement
-
+// Global variables
 let nodes = [];
 let connections = [];
-let lastTime = 0;
-let startTime = 0;
 let width = 0;
 let height = 0;
-let selectedNode = null;
+let lastTime = 0;
+let startTime = 0;
+
+const NODE_COUNT = 40;
+const CONNECTION_DISTANCE = 300;
+const CONNECTION_DISTANCE_SQ = CONNECTION_DISTANCE * CONNECTION_DISTANCE;
+const MAX_CONNECTIONS_PER_NODE = 3;
+const BASE_MOVEMENT_SPEED = 0.056;
+const PULSE_SPEED = 0.0008;
+const PULSE_SPAWN_RATE = 0.0002;
+const PULSE_MIN_SPACING = 0.6;
+const MAX_PULSES_PER_CONNECTION = 3;
+const MAX_GLOW = 2.2;
+const MIN_GLOW = 0.7;
+const GLOW_SPEED = 0.0006;
+const CURVE_INTENSITY = 0.12;
+const BREATH_SPEED = 0.001;
+const BREATH_INTENSITY = 0.25;
+const LINE_WIDTH = 0.8;
 
 function initNodes(w, h) {
   width = w;
@@ -45,75 +42,61 @@ function initNodes(w, h) {
     const node = {
       x: Math.random() * width,
       y: Math.random() * height,
-      vx: 0,
-      vy: 0,
-      radius: Math.random() * 1.5 + 2,
+      vx: (Math.random() - 0.5) * 2,
+      vy: (Math.random() - 0.5) * 2,
+      radius: Math.random() * 1.8 + 2,
       color: COLORS[Math.floor(Math.random() * COLORS.length)],
       connections: 0,
       breathPhase: Math.random() * Math.PI * 2,
-      lastDirectionChange: Math.random() * DIRECTION_CHANGE_INTERVAL,
-      targetX: null,
-      targetY: null,
-      baseX: 0,
-      baseY: 0,
-      angle: Math.random() * Math.PI * 2,
-      orbitSpeed: MIN_ORBIT_SPEED + Math.random() * (MAX_ORBIT_SPEED - MIN_ORBIT_SPEED),
-      orbitRadius: MOVEMENT_RADIUS * (0.3 + Math.random() * 0.7)
+      breathSpeed: BREATH_SPEED * (0.8 + Math.random() * 0.4),
+      breathIntensity: BREATH_INTENSITY * (0.8 + Math.random() * 0.4)
     };
-    
-    // Set initial base position
-    node.baseX = node.x;
-    node.baseY = node.y;
-    
     nodes.push(node);
   }
 }
 
 function updateNodes(deltaTime, timestamp) {
-  const maxDelta = 50;
+  const maxDelta = 16;
   const normalizedDelta = Math.min(deltaTime, maxDelta);
 
   nodes.forEach(node => {
-    // Update orbital movement with normalized delta
-    node.angle += node.orbitSpeed * normalizedDelta;
-    const targetX = node.baseX + Math.cos(node.angle) * node.orbitRadius;
-    const targetY = node.baseY + Math.sin(node.angle) * node.orbitRadius;
+    // Simple movement
+    node.x += node.vx * BASE_MOVEMENT_SPEED;
+    node.y += node.vy * BASE_MOVEMENT_SPEED;
+
+    // Bounce off boundaries with some randomness
+    const padding = 50;
+    if (node.x < padding) {
+      node.x = padding;
+      node.vx = Math.abs(node.vx) + Math.random() * 0.2;
+    } else if (node.x > width - padding) {
+      node.x = width - padding;
+      node.vx = -Math.abs(node.vx) - Math.random() * 0.2;
+    }
     
-    // Smooth movement towards target with speed limit
-    const dx = targetX - node.x;
-    const dy = targetY - node.y;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-    
-    if (dist > 0.01) {
-      const speed = Math.min(BASE_MOVEMENT_SPEED * normalizedDelta, dist);
-      node.x += (dx / dist) * speed;
-      node.y += (dy / dist) * speed;
+    if (node.y < padding) {
+      node.y = padding;
+      node.vy = Math.abs(node.vy) + Math.random() * 0.2;
+    } else if (node.y > height - padding) {
+      node.y = height - padding;
+      node.vy = -Math.abs(node.vy) - Math.random() * 0.2;
     }
 
-    // Occasionally change base position with more dynamic movement
-    if (timestamp - node.lastDirectionChange > DIRECTION_CHANGE_INTERVAL) {
-      // More dynamic base position change
-      const newBaseX = Math.random() * width;
-      const newBaseY = Math.random() * height;
-      node.baseX = node.baseX * 0.6 + newBaseX * 0.4; // More aggressive movement
-      node.baseY = node.baseY * 0.6 + newBaseY * 0.4;
-      node.lastDirectionChange = timestamp;
-      
-      // Randomize orbit parameters for more variety
-      node.orbitSpeed = MIN_ORBIT_SPEED + Math.random() * (MAX_ORBIT_SPEED - MIN_ORBIT_SPEED);
-      node.orbitRadius = MOVEMENT_RADIUS * (0.3 + Math.random() * 0.7); // More varied radiuses
+    // Occasionally change direction slightly
+    if (Math.random() < 0.02) {
+      node.vx += (Math.random() - 0.5) * 0.2;
+      node.vy += (Math.random() - 0.5) * 0.2;
     }
 
-    // Smooth boundary handling with larger padding
-    const padding = 30;
-    if (node.x < padding || node.x > width - padding || 
-        node.y < padding || node.y > height - padding) {
-      node.baseX = width / 2 + (Math.random() - 0.5) * 200; // Wider spread
-      node.baseY = height / 2 + (Math.random() - 0.5) * 200;
+    // Limit speed
+    const speed = Math.sqrt(node.vx * node.vx + node.vy * node.vy);
+    if (speed > 2) {
+      node.vx = (node.vx / speed) * 2;
+      node.vy = (node.vy / speed) * 2;
     }
 
     // Update breathing effect
-    node.breathPhase = (node.breathPhase + BREATH_SPEED * normalizedDelta) % (Math.PI * 2);
+    node.breathPhase = (node.breathPhase + node.breathSpeed * normalizedDelta) % (Math.PI * 2);
   });
 }
 
@@ -261,19 +244,20 @@ function animate(timestamp) {
 
   // Draw nodes with enhanced glow effect
   nodes.forEach(node => {
-    const breathFactor = 1 + Math.sin(node.breathPhase) * 0.15;
+    const breathFactor = 1 + Math.sin(node.breathPhase) * node.breathIntensity;
+    const glowIntensity = MIN_GLOW + (MAX_GLOW - MIN_GLOW) * (0.5 + Math.sin(node.breathPhase * 0.5) * 0.5);
     
     // Outer glow (largest, most transparent)
     drawCommands.push({ type: 'beginPath' });
     drawCommands.push({ 
       type: 'fillStyle', 
-      value: `${node.color}30`
+      value: `${node.color}${Math.floor(glowIntensity * 30).toString(16).padStart(2, '0')}`
     });
     drawCommands.push({ 
       type: 'arc',
       x: node.x,
       y: node.y,
-      radius: node.radius * 2.5 * breathFactor,
+      radius: node.radius * 3.0 * breathFactor,
       startAngle: 0,
       endAngle: Math.PI * 2
     });
@@ -283,13 +267,13 @@ function animate(timestamp) {
     drawCommands.push({ type: 'beginPath' });
     drawCommands.push({ 
       type: 'fillStyle', 
-      value: `${node.color}70`
+      value: `${node.color}${Math.floor(glowIntensity * 70).toString(16).padStart(2, '0')}`
     });
     drawCommands.push({ 
       type: 'arc',
       x: node.x,
       y: node.y,
-      radius: node.radius * 1.7 * breathFactor,
+      radius: node.radius * 2.0 * breathFactor,
       startAngle: 0,
       endAngle: Math.PI * 2
     });
