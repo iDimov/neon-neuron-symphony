@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Hero } from '@/components/Hero';
 import { CorePrinciplesAlt } from '@/components/CorePrinciplesAlt';
 import { NeuralBackground } from '@/components/NeuralBackground';
@@ -45,15 +45,11 @@ const DEMO_SECTIONS = [
   }
 ];
 
-const Index = () => {
-  const [activeSection, setActiveSection] = React.useState(0);
+export default function Index() {
+  const [activeSection, setActiveSection] = useState(0);
 
   const handleSectionComplete = () => {
-    setActiveSection((prev) => (prev) % DEMO_SECTIONS.length);
-  };
-
-  const handleSectionClick = (index: number) => {
-    setActiveSection(index);
+    setActiveSection(prev => (prev + 1) % DEMO_SECTIONS.length);
   };
 
   return (
@@ -93,7 +89,7 @@ const Index = () => {
                   description={section.description}
                   isActive={activeSection === index}
                   onComplete={handleSectionComplete}
-                  onClick={() => handleSectionClick(index)}
+                  onClick={() => setActiveSection(index)}
                   className="transition-all duration-300 hover:transform hover:scale-[1.02] border border-transparent hover:border-demo-purple/30 shadow-lg hover:shadow-demo-purple/20"
                 />
               ))}
@@ -115,6 +111,4 @@ const Index = () => {
       </section>
     </main>
   );
-};
-
-export default Index;
+}
