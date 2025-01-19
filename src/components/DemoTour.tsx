@@ -5,7 +5,7 @@ import { Sparkles } from 'lucide-react';
 
 const DEMO_SECTIONS = [
   {
-    title: "Plan Your Journey",
+    title: "Planning",
     description: [
       "Personalized learning paths tailored to your IT career goals",
       "AI analysis of your current English proficiency level",
@@ -14,7 +14,7 @@ const DEMO_SECTIONS = [
     ]
   },
   {
-    title: "Personalized Learning",
+    title: "Learning",
     description: [
       "Real-world IT scenarios and code reviews",
       "Technical discussions in English",
@@ -23,16 +23,17 @@ const DEMO_SECTIONS = [
     ]
   },
   {
-    title: "Tracking & Analytics",
+    title: "Tracking",
     description: [
-      "Detailed analytics of your learning progress",
-      "Vocabulary growth monitoring",
-      "Speaking confidence metrics",
-      "Professional communication skills assessment"
+      "Create rich learning notes with code snippets and explanations",
+      "AI analyzes your notes to suggest related materials and exercises",
+      "Track your progress with visual insights and learning patterns",
+      "Build your personal knowledge base for quick reference",
+      "Get AI-powered reminders to review crucial concepts"
     ]
   },
   {
-    title: "Tech Community",
+    title: "Community",
     description: [
       "Connect with IT professionals worldwide",
       "Real conversations about technology",
@@ -74,7 +75,7 @@ export const DemoTour = () => {
             <Sparkles className="w-4 h-4 text-purple-400 group-hover:text-purple-300 transition-colors" />
             <span className="text-sm font-medium bg-gradient-to-r from-purple-400 to-blue-400 
                          bg-clip-text text-transparent">
-              Interactive Demo
+              Quick Demo
             </span>
           </div>
           <h2 className="text-4xl sm:text-5xl lg:text-7xl font-bold bg-gradient-to-br 
@@ -83,9 +84,9 @@ export const DemoTour = () => {
             Your English Learning <br />
             <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text">Revolution</span>
           </h2>
-          <p className="text-lg sm:text-xl text-slate-300/90 max-w-2xl mx-auto">
+          {/* <p className="text-lg sm:text-xl text-slate-300/90 max-w-2xl mx-auto">
             Watch how our AI-powered platform transforms your learning journey with personalized experiences.
-          </p>
+          </p> */}
         </div>
 
         {/* Main content with glass effect container */}
