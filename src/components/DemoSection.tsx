@@ -79,6 +79,16 @@ export const DemoSection = React.memo(({
   onClick,
   className
 }: DemoSectionProps) => {
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [contentHeight, setContentHeight] = useState(0);
+
+  useEffect(() => {
+    if (contentRef.current) {
+      const height = contentRef.current.scrollHeight;
+      setContentHeight(height);
+    }
+  }, [description]);
+
   return (
     <div 
       className={cn(
@@ -95,8 +105,7 @@ export const DemoSection = React.memo(({
         <div className="flex items-center justify-between">
           <h3 className={cn(
             "text-xl font-semibold bg-gradient-to-r from-white to-demo-purple bg-clip-text text-transparent",
-            "transition-all duration-300",
-            isActive ? "mb-3" : "mb-0"
+            "transition-all duration-300"
           )}>
             {title}
           </h3>
@@ -109,11 +118,19 @@ export const DemoSection = React.memo(({
           )}
         </div>
 
-        <div className={cn(
-          "transition-all duration-500 overflow-hidden",
-          isActive ? "max-h-[300px] opacity-100" : "max-h-0 opacity-0"
-        )}>
-          <div className="mt-3">
+        <motion.div 
+          className="overflow-hidden"
+          animate={{ 
+            height: isActive ? contentHeight : 0,
+            opacity: isActive ? 1 : 0
+          }}
+          transition={{ 
+            duration: 0.5,
+            ease: "linear",
+            opacity: { duration: 0.2 }
+          }}
+        >
+          <div ref={contentRef} className="mt-3">
             <ul className="space-y-2 mb-4">
               {description.map((item, index) => (
                 <li key={index} className="flex items-start gap-2 text-sm text-demo-text">
@@ -126,7 +143,7 @@ export const DemoSection = React.memo(({
               <LinearProgress isActive={isActive} onComplete={onComplete} />
             )}
           </div>
-        </div>
+        </motion.div>
       </div>
     </div>
   );
